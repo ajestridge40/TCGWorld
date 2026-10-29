@@ -22,6 +22,8 @@ func _ready() -> void:
 	test_engine_rules()
 	test_ai_vs_ai()
 	test_matchups()
+	test_npc_ladder()
+	test_tutorial()
 	test_save_roundtrip()
 	test_maps()
 	print("%d checks, %d failures" % [checks, failures])
@@ -345,6 +347,56 @@ func test_matchups() -> void:
 		var rate: float = float(wins[d[0]]) / (games_per * (decks.size() - 1))
 		print("  %s overall win rate %.0f%%" % [d[0], rate * 100])
 		check(rate > 0.3 and rate < 0.7, "%s win rate %.0f%% within 30-70%%" % [d[0], rate * 100])
+
+
+## Townsfolk form a difficulty ladder against the starter decks:
+## Pip & Rose easy, Theo medium, Mira & Corwin hard, Gus hardest.
+func test_npc_ladder() -> void:
+	var NpcLadder = load("res://tests/npc_ladder.gd")
+	for which in ["base", "tff"]:
+		var r: Dictionary = NpcLadder.ladder(60, which)
+		print("  ladder (%s): %s" % [which, ", ".join(CardDB.npc_order.map(func(id): return "%s %.0f%%" % [id, r[id]]))])
+		check(r["pip"] < 48 and r["rose"] < 48, "%s: Pip and Rose are easy" % which)
+		check(r["theo"] > 36 and r["theo"] < 62, "%s: Theo is medium" % which)
+		check(r["mira"] > r["pip"] + 8 and r["corwin"] > r["rose"] + 8, "%s: Mira and Corwin are harder than the kids' table" % which)
+		check(r["gus"] > 55, "%s: Gus is the toughest" % which)
+
+
+## The lesson game should be very winnable for a beginner of any play style.
+func test_tutorial() -> void:
+	var t: Dictionary = CardDB.tutorial
+	check(t["player_deck"].size() == 30 and t["gus_deck"].size() == 30, "tutorial decks have 30 cards")
+	var wins := 0
+	var styles := [0.1, 0.3, 0.5, 0.7, 0.9]
+	for style in styles:
+		for seed_v in 4:
+			var e := BattleEngine.new()
+			e.setup(t["player_deck"], t["gus_deck"], "P", "Gus", 7 + seed_v, { "first": 0, "stacked": true })
+			check(e.active == 0, "player goes first in the lesson")
+			check(e.me(0).hand[0].def.id == "hvb_kindling_fox", "lesson opens with Kindling Fox in hand")
+			var ais := [BattleAI.new(style), BattleAI.new(float(t["aggression"]))]
+			ais[0].rng.seed = seed_v
+			ais[1].rng.seed = seed_v
+			e.start()
+			while not e.is_over() and e.turn < 80:
+				var pi := e.active
+				for phase in 2:
+					while not e.is_over():
+						var act: Dictionary = ais[pi].next_action(e, pi)
+						if act.is_empty():
+							break
+						if act["kind"] == "move":
+							e.move(pi, act["uid"], act["lane"])
+						else:
+							e.play(pi, act["card"], act["lane"], act["target"])
+					if phase == 0 and not e.is_over():
+						e.attack(ais[pi].choose_attackers(e, pi))
+				e.end_turn()
+			if e.winner == 0:
+				wins += 1
+	var rate := float(wins) / (styles.size() * 4)
+	print("  tutorial: player wins %.0f%% across play styles" % (rate * 100))
+	check(rate >= 0.75, "tutorial is winnable (%.0f%%)" % (rate * 100))
 
 
 func test_save_roundtrip() -> void:

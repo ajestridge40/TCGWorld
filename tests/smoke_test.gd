@@ -98,8 +98,10 @@ func _scene_test() -> void:
 	s._delete_deck()
 	s.queue_free()
 	# Battle on autopilot.
-	for opp in ["pip", "mira"]:
-		Game.battle_request = { "opponent": opp, "best_of": 1, "context": "casual" }
+	var sealed_before := Game.sealed_total()
+	for spec in [["gus", "tutorial"], ["pip", "casual"], ["mira", "casual"]]:
+		var opp: String = spec[0]
+		Game.battle_request = { "opponent": opp, "best_of": 1, "context": spec[1] }
 		s = await _load("battle")
 		var guard := 0
 		while not s.result_layer.visible and guard < 20000:
@@ -126,7 +128,11 @@ func _scene_test() -> void:
 				"attack":
 					s._on_main_button()
 		check(s.result_layer.visible, "battle vs %s finished (turn %d)" % [opp, s.engine.turn])
-		print("  battle vs %s: winner seat %d on turn %d" % [opp, s.engine.winner, s.engine.turn])
+		print("  %s vs %s: winner seat %d on turn %d" % [spec[1], opp, s.engine.winner, s.engine.turn])
+		if spec[1] == "tutorial":
+			check(Game.flags.get("tutorial_done", false), "tutorial marked done")
+			check(Game.sealed_total() == sealed_before + 2, "tutorial gave 2 packs")
+			check(s._coach_seen.size() >= 6, "coach showed tips (%s)" % [s._coach_seen.keys()])
 		s.queue_free()
 		await _frames(2)
 	# Tournament

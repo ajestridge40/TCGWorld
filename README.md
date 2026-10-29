@@ -56,8 +56,13 @@ automatic. First to 0 Heart loses. Full rules: [docs/GAME_RULES.md](docs/GAME_RU
 
 ```bash
 godot --headless --path . res://tests/test_runner.tscn   # rules / balance / packs / decks / AI matchups / save
-godot --headless --path . res://tests/smoke_test.tscn    # loads every scene, plays 2 battles
+godot --headless --path . res://tests/smoke_test.tscn    # loads every scene, plays the tutorial + 2 battles
+godot --headless --path . res://tests/balance_report.tscn -- 2.0   # ~40k-game balance report
+godot --headless --path . res://tests/npc_ladder.tscn -- 200 base  # townsfolk difficulty ladder
+godot --headless --path . res://tests/economy_sim.tscn -- 200 112  # coins, packs and set completion over time
 ```
+
+These run automatically on GitHub for every push (`.github/workflows/tests.yml`).
 
 ## Adding a card set
 

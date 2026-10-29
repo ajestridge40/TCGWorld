@@ -1,0 +1,129 @@
+{
+  "opponent": "gus",
+  "aggression": 0.3,
+  "reward_packs": 2,
+  "reward_friendship": 50,
+  "player_deck_name": "Gus's Lesson Deck",
+  "player_deck": [
+    "hvb_kindling_fox",
+    "hvb_burrow_badger",
+    "hvb_spark_toss",
+    "hvb_hearth_salamander",
+    "hvb_mossback_tortoise",
+    "hvb_flame_juggler",
+    "hvb_brick_oven_golem",
+    "hvb_thicket_stag",
+    "hvb_sudden_bloom",
+    "hvb_puffcap_sprout",
+    "hvb_kindling_fox",
+    "hvb_hearth_salamander",
+    "hvb_brick_oven_golem",
+    "hvb_burrow_badger",
+    "hvb_spark_toss",
+    "hvb_elder_oakheart",
+    "hvb_mossback_tortoise",
+    "hvb_thicket_stag",
+    "hvb_flame_juggler",
+    "hvb_clockwork_mouse",
+    "hvb_hearth_salamander",
+    "hvb_burrow_badger",
+    "hvb_brick_oven_golem",
+    "hvb_sudden_bloom",
+    "hvb_kindling_fox",
+    "hvb_puffcap_sprout",
+    "hvb_spark_toss",
+    "hvb_mossback_tortoise",
+    "hvb_thicket_stag",
+    "hvb_clockwork_mouse"
+  ],
+  "gus_deck": [
+    "hvb_shellback_crab",
+    "hvb_harbor_gull",
+    "hvb_meadow_squire",
+    "hvb_clockwork_mouse",
+    "hvb_otter_scout",
+    "hvb_patchwork_scarecrow",
+    "hvb_bell_hen",
+    "hvb_bell_hen",
+    "hvb_clockwork_mouse",
+    "hvb_shellback_crab",
+    "hvb_clockwork_mouse",
+    "hvb_harbor_gull",
+    "hvb_bell_hen",
+    "hvb_bell_hen",
+    "hvb_meadow_squire",
+    "hvb_patchwork_scarecrow",
+    "hvb_bell_hen",
+    "hvb_clockwork_mouse",
+    "hvb_bell_hen",
+    "hvb_shellback_crab",
+    "hvb_bell_hen",
+    "hvb_clockwork_mouse",
+    "hvb_harbor_gull",
+    "hvb_meadow_squire",
+    "hvb_patchwork_scarecrow",
+    "hvb_bell_hen",
+    "hvb_bell_hen",
+    "hvb_harbor_gull",
+    "hvb_otter_scout",
+    "hvb_clockwork_mouse"
+  ],
+  "tips": [
+    {
+      "id": "welcome",
+      "text": "Welcome to the table! We each start with 20 Heart. Knock mine to 0 and you win.\n\nYou have 1 [b]Spark[/b], the gold orb on your panel. A card's cost is in its gold gem.\n\nClick [b]Kindling Fox[/b], then a green lane."
+    },
+    {
+      "id": "attack_mode",
+      "text": "Each creature attacks [b]straight down its lane[/b].\n\nThe badges preview what will happen: [b]\u2192 1[/b] means 1 damage to my Heart, because the lane across is empty.\n\nPress [b]Attack![/b]"
+    },
+    {
+      "id": "swift",
+      "text": "Nice! Creatures usually nap the turn they arrive (that's the [b]zzz[/b]).\n\nBut Kindling Fox has [b]Swift[/b], so it can attack right away. Press [b]Attack...[/b]"
+    },
+    {
+      "id": "end_turn",
+      "text": "That's everything you can do this turn. Press [b]End turn[/b] and I'll take mine."
+    },
+    {
+      "id": "opp_turn",
+      "text": "My turn. I get Sparks too, one more every turn.\n\nGoing second, I also got a [b]Lucky Penny[/b]: one extra Spark, once. Fair's fair."
+    },
+    {
+      "id": "fight",
+      "text": "See my creature across from yours? Creatures facing each other [b]fight[/b]: both deal their power at the same time, and damage [b]stays[/b].\n\nWhen you attack, badges tell you how it'll go: [b]KO![/b] you win the fight, [b]trade[/b] both fall, [b]hit[/b] both live, [b]dies[/b] you lose it."
+    },
+    {
+      "id": "guard",
+      "text": "You don't need to block on my turn. Your creatures [b]guard their lane[/b] automatically. An empty lane is an open door to your Heart."
+    },
+    {
+      "id": "more_sparks",
+      "text": "New turn: one more Spark, and they all refill. Unused Sparks don't carry over, so try to spend them every turn."
+    },
+    {
+      "id": "shield",
+      "text": "See the blue ring on my Squire? That's a [b]Shield[/b]. It ignores the first hit, whatever the size. Pop it with something small first."
+    },
+    {
+      "id": "soar",
+      "text": "My Gull has [b]Soar[/b]: it flies over whatever's across from it and hits your Heart. Only Soar or Reach creatures can fight it. Spells work too!"
+    },
+    {
+      "id": "spell",
+      "text": "[b]Spark Toss[/b] is a spell. Click it, then click any creature, or my panel on the left to hit my Heart directly."
+    },
+    {
+      "id": "full",
+      "text": "Lanes full? You can play a creature right on top of one of your own. The old one heads home to make room."
+    },
+    {
+      "id": "low",
+      "text": "You've got me on the ropes. Finish it!"
+    },
+    {
+      "id": "free",
+      "text": "That's the whole game, really. The rest is choosing lanes and timing. I'll keep quiet unless something new comes up."
+    }
+  ]
+}

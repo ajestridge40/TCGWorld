@@ -31,6 +31,8 @@ func _ready() -> void:
 		Game.pending_packs = [{ "set": "hvb", "variant": "" }]
 	if scene == "battle":
 		Game.battle_request = { "opponent": "mira", "best_of": 1, "context": "casual" }
+		if setup.begins_with("tutorial"):
+			Game.battle_request = { "opponent": "gus", "best_of": 1, "context": "tutorial" }
 		if setup == "midgame2":
 			Game.day = 20
 			Game.decks[0] = Deck.from_dict({ "name": "Tidefall Test", "cards": CardDB.npc("theo")["set_decks"]["tff"] })
@@ -87,6 +89,18 @@ func _ready() -> void:
 					s._try_play(c)
 					break
 			await get_tree().create_timer(0.3).timeout
+	if scene == "battle" and setup.begins_with("tutorial"):
+		while s.busy or s.mode == "idle":
+			await get_tree().process_frame
+		if setup == "tutorial_attack":
+			s._try_play(s.engine.me(0).hand[0])
+			await get_tree().create_timer(0.2).timeout
+			s.choose_lane(1)
+			while s.busy:
+				await get_tree().process_frame
+			await get_tree().create_timer(0.8).timeout
+			s._on_main_button()
+		await get_tree().create_timer(1.2).timeout
 	if scene == "world" and setup == "talk":
 		s._talk_to(s.npcs.keys()[0])
 		await get_tree().create_timer(2.0).timeout

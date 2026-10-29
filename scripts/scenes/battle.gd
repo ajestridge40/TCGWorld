@@ -61,6 +61,8 @@ func _ready() -> void:
 	best_of = int(req.get("best_of", 1))
 	context = req.get("context", "casual")
 	ai = BattleAI.new(float(npc.get("aggression", 0.5)))
+	if context == "tutorial":
+		ai.aggression = float(CardDB.tutorial.get("aggression", 0.3))
 	_build_ui()
 	_new_game()
 
@@ -112,10 +114,11 @@ func _build_ui() -> void:
 
 	opp_sparks = SparkMeter.new()
 	me_sparks = SparkMeter.new()
-	opp_panel = _player_panel(npc.get("name", "?"), npc.get("deck_name", ""), npc.get("look", {}), opp_life, opp_info, opp_sparks)
+	opp_panel = _player_panel(npc.get("name", "?"), "Teaching Deck" if context == "tutorial" else npc.get("deck_name", ""), npc.get("look", {}), opp_life, opp_info, opp_sparks)
 	opp_panel.position = Vector2(6, 6)
 	add_child(opp_panel)
-	me_panel = _player_panel(Game.player_name, Game.current_deck().name, CharacterSprite.PLAYER_LOOK, me_life, me_info, me_sparks)
+	var my_deck_name: String = CardDB.tutorial.get("player_deck_name", "") if context == "tutorial" else Game.current_deck().name
+	me_panel = _player_panel(Game.player_name, my_deck_name, CharacterSprite.PLAYER_LOOK, me_life, me_info, me_sparks)
 	me_panel.position = Vector2(6, 372)
 	add_child(me_panel)
 	opp_panel.gui_input.connect(func(ev): _on_player_clicked(ev, 1))
@@ -152,6 +155,9 @@ func _build_ui() -> void:
 	log_box.add_theme_font_size_override("normal_font_size", 11)
 	log_box.add_theme_color_override("default_color", UIKit.INK)
 	lp.add_child(log_box)
+	if context == "tutorial":
+		lp.visible = false
+		_build_coach()
 
 	banner.position = Vector2(CX, 172)
 	banner.size = Vector2(CW, 36)
@@ -212,7 +218,10 @@ func _new_game() -> void:
 	game_no += 1
 	engine = BattleEngine.new()
 	engine.event.connect(_on_event)
-	engine.setup(Game.current_deck().to_list(), _deck_list(Game.npc_deck(npc_id)), Game.player_name, npc["name"])
+	if context == "tutorial":
+		engine.setup(CardDB.tutorial["player_deck"], CardDB.tutorial["gus_deck"], Game.player_name, npc["name"], 7, { "first": 0, "stacked": true })
+	else:
+		engine.setup(Game.current_deck().to_list(), _deck_list(Game.npc_deck(npc_id)), Game.player_name, npc["name"])
 	log_box.clear()
 	views.clear()
 	for c in board.get_children():
@@ -535,6 +544,8 @@ func _refresh() -> void:
 			if c:
 				_layout_creature(c, old)
 	_layout_hand(me.hand, old)
+	if context == "tutorial":
+		_update_coach()
 
 
 func _style_slots() -> void:
@@ -888,7 +899,9 @@ func _show_result(won_game: bool, match_over: bool) -> void:
 	quote.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	quote.custom_minimum_size.x = 330
 	v.add_child(quote)
-	if context == "casual":
+	if context == "tutorial":
+		_finish_tutorial(v, match_won)
+	elif context == "casual":
 		var reward := Game.record_battle(npc_id, match_won, context)
 		if reward > 0:
 			v.add_child(UIKit.label("+%s" % UIKit.coins_text(reward), 18, Color("2e7d32"), HORIZONTAL_ALIGNMENT_CENTER))
@@ -901,6 +914,112 @@ func _show_result(won_game: bool, match_over: bool) -> void:
 func _leave() -> void:
 	Game.save_game()
 	Game.goto("tournament" if context == "tournament" else Game.return_scene)
+
+
+# ================================================================ tutorial
+
+var coach_text := RichTextLabel.new()
+var _coach_seen := {}
+var _coach_current := ""
+var _coach_turn := 0
+
+
+func _build_coach() -> void:
+	var cp := UIKit.panel(Color("fffaf0"), UIKit.GOLD)
+	cp.position = Vector2(762, 282)
+	cp.custom_minimum_size = Vector2(192, 252)
+	cp.size = cp.custom_minimum_size
+	add_child(cp)
+	var v := VBoxContainer.new()
+	cp.add_child(v)
+	var h := HBoxContainer.new()
+	var face := TextureRect.new()
+	face.texture = CharacterSprite.texture(npc.get("look", {}), 0, 0)
+	face.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	face.custom_minimum_size = Vector2(32, 32)
+	face.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	h.add_child(face)
+	h.add_child(UIKit.label("Gus says...", 14, UIKit.WOOD))
+	v.add_child(h)
+	coach_text.bbcode_enabled = true
+	coach_text.fit_content = true
+	coach_text.custom_minimum_size = Vector2(172, 190)
+	coach_text.add_theme_font_size_override("normal_font_size", 12)
+	coach_text.add_theme_font_size_override("bold_font_size", 12)
+	coach_text.add_theme_color_override("default_color", UIKit.INK)
+	v.add_child(coach_text)
+
+
+## Is this tip's moment now? Tips show once, in priority order.
+func _tip_ready(id: String) -> bool:
+	var me: BattleEngine.PlayerState = engine.me(0)
+	var op: BattleEngine.PlayerState = engine.me(1)
+	var my_turn := engine.active == 0
+	match id:
+		"welcome":
+			return my_turn and engine.turn == 1 and me.creatures().is_empty()
+		"attack_mode":
+			return mode == "attack"
+		"swift":
+			return my_turn and mode == "play" and not engine.attacked and me.creatures().any(func(c): return engine.can_attack(c))
+		"end_turn":
+			return my_turn and engine.attacked and mode == "play"
+		"opp_turn":
+			return not my_turn
+		"fight":
+			return my_turn and me.creatures().any(func(c): return engine.blocker_for(c) != null)
+		"guard":
+			return my_turn and engine.turn >= 3 and _coach_seen.has("fight")
+		"more_sparks":
+			return my_turn and me.max_sparks >= 2
+		"shield":
+			return op.creatures().any(func(c): return c.shield)
+		"soar":
+			return op.creatures().any(func(c): return c.has_kw("soar"))
+		"spell":
+			return my_turn and engine.turn >= 3 and mode == "play" and me.hand.any(func(c): return c.def.is_spell() and engine.can_play(0, c))
+		"full":
+			return my_turn and engine.empty_lanes(0).is_empty() and me.hand.any(func(c): return c.def.is_creature())
+		"low":
+			return op.life <= 8
+		"free":
+			return _coach_seen.size() >= 8
+	return false
+
+
+func _update_coach() -> void:
+	# Keep the current tip up while it still applies (within the same turn),
+	# so tips don't flash past when several become true at once.
+	if _coach_current != "" and _coach_turn == engine.turn and _tip_ready(_coach_current):
+		return
+	for tip in CardDB.tutorial.get("tips", []):
+		var id: String = tip["id"]
+		if _coach_seen.has(id) or not _tip_ready(id):
+			continue
+		_coach_seen[id] = true
+		_coach_current = id
+		_coach_turn = engine.turn
+		coach_text.text = tip["text"]
+		coach_text.visible_ratio = 0.0
+		create_tween().tween_property(coach_text, "visible_ratio", 1.0, 0.8)
+		Sfx.play("chime", 1.4, -10.0)
+		return
+
+
+func _finish_tutorial(v: VBoxContainer, won: bool) -> void:
+	var first_time: bool = not Game.flags.get("tutorial_done", false)
+	var msg := "Not bad at all for a first game." if won else "Ha! Don't feel bad. I've had thirty years of practice."
+	if first_time:
+		var packs := int(CardDB.tutorial.get("reward_packs", 2))
+		Game.flags["tutorial_done"] = true
+		Game.add_sealed("hvb", "", packs)
+		Game.add_friendship("gus", int(CardDB.tutorial.get("reward_friendship", 50)))
+		msg += " Here, take %d boosters on the house. Build something you love." % packs
+		Sfx.play("fanfare")
+	var l := UIKit.label(msg, 14, UIKit.INK, HORIZONTAL_ALIGNMENT_CENTER)
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.custom_minimum_size.x = 330
+	v.add_child(l)
 
 
 ## Row of Spark orbs: lit = available this turn, dim = spent, hollow = not yet earned.

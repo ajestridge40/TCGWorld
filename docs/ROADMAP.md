@@ -25,6 +25,15 @@
 - [x] NPC decks evolve when a set releases; shops, binder and singles respect release dates
 - [x] New battle UI: lane placement, play-over-your-own-creature, Move, attack forecast badges, Spark meter
 
+## Milestone 0.6 — Balance & onboarding ✅
+
+- [x] 41,800-game balance report (`docs/BALANCE_REPORT.md`, `tests/balance_report.tscn`)
+- [x] Townsfolk rebuilt into a difficulty ladder (Pip/Rose easy → Theo → Mira/Corwin → Gus) with a regression test
+- [x] Cinderpaw Dragon nerfed (the one card flagged as too strong)
+- [x] Economy simulator; buyback, battle rewards and shift pay retuned so a set takes about two seasons to finish
+- [x] GitHub Actions runs the test suite and smoke test on every push
+- [x] Interactive tutorial: a scripted lesson game with Gus coaching each mechanic as it comes up
+
 ## Milestone 1 — Make the slice feel finished (next)
 
 Focus: polish what exists before adding systems.
@@ -36,7 +45,6 @@ Focus: polish what exists before adding systems.
 - [ ] Hand size + deck count shown for opponent as card backs; mulligan screen
 - [ ] Controller support and rebindable keys
 - [ ] Settings menu (volume, text speed, window scale)
-- [ ] Tutorial: Gus teaches a scripted first game
 
 ## Milestone 2 — Deeper card game
 

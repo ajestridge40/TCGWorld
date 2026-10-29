@@ -1,10 +1,10 @@
 {
   "sell_prices": {
-    "common": 2,
-    "uncommon": 6,
-    "rare": 25,
-    "ultra": 80,
-    "secret": 300
+    "common": 1,
+    "uncommon": 3,
+    "rare": 10,
+    "ultra": 40,
+    "secret": 150
   },
   "single_prices": {
     "common": 6,
@@ -173,7 +173,7 @@
   },
   "shift": {
     "hours": 4,
-    "pay": 110,
+    "pay": 75,
     "friend": "gus",
     "friend_points": 30,
     "min_hearts": 2,

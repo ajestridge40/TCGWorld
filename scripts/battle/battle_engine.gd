@@ -84,11 +84,14 @@ class CardInstance:
 
 # ---------------------------------------------------------------- setup
 
-func setup(deck_a: Array, deck_b: Array, name_a: String, name_b: String, seed_value: int = -1) -> void:
+## opts: { "first": 0/1 to fix who goes first, "stacked": true to keep both
+## decks in the given order (first card listed is drawn first; used by the tutorial). }
+func setup(deck_a: Array, deck_b: Array, name_a: String, name_b: String, seed_value: int = -1, opts: Dictionary = {}) -> void:
 	if seed_value >= 0:
 		rng.seed = seed_value
 	else:
 		rng.randomize()
+	var stacked: bool = opts.get("stacked", false)
 	players = []
 	for i in 2:
 		var p := PlayerState.new()
@@ -98,21 +101,24 @@ func setup(deck_a: Array, deck_b: Array, name_a: String, name_b: String, seed_va
 		p.library = (deck_a if i == 0 else deck_b).duplicate()
 		p.lanes = []
 		p.lanes.resize(LANES)
-		_shuffle(p.library)
+		if stacked:
+			p.library.reverse()
+		else:
+			_shuffle(p.library)
 		players.append(p)
 	winner = -1
 	turn = 0
 	phase = Phase.PLAY
-	active = rng.randi_range(0, 1)
-	_opening_hand(players[active], HAND_FIRST)
+	active = int(opts.get("first", rng.randi_range(0, 1)))
+	_opening_hand(players[active], HAND_FIRST, not stacked)
 	var second: PlayerState = players[1 - active]
-	_opening_hand(second, HAND_SECOND)
+	_opening_hand(second, HAND_SECOND, not stacked)
 	second.hand.append(_make_instance("lucky_penny", second.index))
 
 
 ## Cozy mulligan: a hand with nothing costing 2 or less is redrawn once, free.
-func _opening_hand(p: PlayerState, n: int) -> void:
-	for attempt in 2:
+func _opening_hand(p: PlayerState, n: int, allow_mulligan: bool = true) -> void:
+	for attempt in (2 if allow_mulligan else 1):
 		for i in n:
 			_draw(p, false)
 		var cheap := p.hand.filter(func(c): return c.def.cost <= 2).size()

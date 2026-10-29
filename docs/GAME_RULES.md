@@ -117,3 +117,46 @@ suite enforces it (`tests/test_runner.gd`, `test_balance`):
   the "play over your own creature" rule.
 - After these fixes, the three starters land between 48% and 53% in 300-game
   round-robins, and the first player wins about 47% of games.
+
+## Opponent difficulty ladder
+
+The townsfolk are tuned as a deliberate difficulty ladder: each one's deck
+(played with their own AI personality) is simulated against all three starter
+decks. `tests/npc_ladder.tscn` measures it and `test_npc_ladder` guards it.
+
+| Townsperson | Role | Win rate vs starters (Set 1 / after Tidefall) |
+|---|---|---|
+| Pip | Easy: big clunky monsters | ~38% / ~32% |
+| Nana Rose | Easy: gentle hens and walls | ~36% / ~35% |
+| Judge Theo | Medium: tidy control | ~48% / ~50% |
+| Mira | Hard: real tempo deck | ~57% / ~55% |
+| Corwin | Hard: removal and fliers | ~65% / ~63% |
+| Gus | Boss (unlocks at 3 hearts) | ~70% |
+
+## Economy
+
+`tests/economy_sim.tscn` simulates hundreds of players with the real pack
+generator, prices and rewards. A reasonably engaged player (3 battles a day,
+Gus's shifts once he likes you, the weekly Showdown, selling spares):
+
+| | Typical result |
+|---|---|
+| Earnings | ~240 coins/day (a booster is 100-120) |
+| First Ultra Rare | first day or two |
+| First Secret Rare | around day 7-12 |
+| All Hearthvale rares | around day 5-7 |
+| Hearthvale 100% complete | around day 60 (end of the second season); ~10% of players still chasing a secret rare at day 112 |
+| Tidefall 100% complete | around 3-4 weeks after release |
+
+The first pass found a snowball: Gus bought cards back at ~70% of a pack's
+price, so every pack nearly paid for the next, and sets completed in about a
+month. Buyback is now bulk-bin pricing (~30%), and battle rewards and shift pay
+were lowered.
+
+## Learning the game
+
+New players meet Gus at the Gilded Deck, who offers a lesson: a scripted first
+match with fixed decks (`data/tutorial.json`) where he explains each idea the
+moment it first matters (Sparks, lanes, attacking, fights, guarding, Shield,
+Soar, spells, playing over your own creature). The lesson is tuned to be won by
+beginners of any play style and rewards two boosters the first time.

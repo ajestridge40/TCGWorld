@@ -14,7 +14,7 @@
       "battles": true,
       "battle_min_hearts": 3,
       "aggression": 0.55,
-      "reward": 120,
+      "reward": 70,
       "deck_name": "Gus's Old Binder Deck",
       "deck": {
         "hvb_kindling_fox": 2,
@@ -94,22 +94,22 @@
       },
       "battles": true,
       "battle_min_hearts": 0,
-      "aggression": 0.85,
-      "reward": 70,
+      "aggression": 0.7,
+      "reward": 45,
       "deck_name": "Red-Black Rush",
       "deck": {
         "hvb_kindling_fox": 3,
         "hvb_hearth_salamander": 3,
         "hvb_spark_toss": 3,
-        "hvb_flame_juggler": 2,
-        "hvb_dusk_bat": 3,
-        "hvb_lantern_moth": 3,
-        "hvb_withering_hex": 2,
+        "hvb_flame_juggler": 3,
+        "hvb_brick_oven_golem": 3,
         "hvb_nightshade_viper": 3,
-        "hvb_lantern_phoenix": 1,
+        "hvb_lantern_moth": 3,
+        "hvb_withering_hex": 3,
+        "hvb_festival_fireworks": 2,
+        "hvb_lantern_phoenix": 2,
         "hvb_countess_of_gloam": 1,
-        "hvb_clockwork_mouse": 3,
-        "hvb_brick_oven_golem": 3
+        "hvb_dusk_bat": 1
       },
       "schedule": [
         {
@@ -171,16 +171,15 @@
           "hvb_kindling_fox": 3,
           "hvb_hearth_salamander": 3,
           "hvb_spark_toss": 3,
-          "hvb_flame_juggler": 2,
+          "hvb_flame_juggler": 3,
           "hvb_brick_oven_golem": 3,
-          "hvb_dusk_bat": 3,
-          "hvb_lantern_moth": 3,
           "hvb_nightshade_viper": 3,
-          "hvb_lantern_phoenix": 1,
+          "hvb_lantern_moth": 3,
+          "hvb_withering_hex": 3,
+          "hvb_lantern_phoenix": 2,
+          "hvb_countess_of_gloam": 1,
           "tff_firecracker": 2,
-          "tff_kiln_imp": 2,
-          "tff_festival_drake": 1,
-          "hvb_countess_of_gloam": 1
+          "tff_kiln_imp": 1
         }
       }
     },
@@ -197,22 +196,21 @@
       "battles": true,
       "battle_min_hearts": 0,
       "aggression": 0.35,
-      "reward": 50,
+      "reward": 30,
       "deck_name": "Garden Party",
       "deck": {
         "hvb_bell_hen": 3,
         "hvb_meadow_squire": 3,
-        "hvb_sunlit_blessing": 2,
+        "hvb_sunlit_blessing": 3,
         "hvb_gatehouse_guardian": 3,
-        "hvb_village_rally": 2,
         "hvb_dawnwing_pegasus": 2,
         "hvb_burrow_badger": 3,
         "hvb_mossback_tortoise": 3,
-        "hvb_sudden_bloom": 2,
-        "hvb_puffcap_sprout": 2,
-        "hvb_harvest_festival": 2,
-        "hvb_captain_of_bells": 1,
-        "hvb_thicket_stag": 2
+        "hvb_sudden_bloom": 3,
+        "hvb_puffcap_sprout": 3,
+        "hvb_patchwork_scarecrow": 2,
+        "hvb_village_rally": 1,
+        "hvb_thicket_stag": 1
       },
       "schedule": [
         {
@@ -286,7 +284,23 @@
       ],
       "lose_lines": [
         "Oh my, did I win? The hens did all the work."
-      ]
+      ],
+      "set_decks": {
+        "tff": {
+          "hvb_bell_hen": 3,
+          "hvb_meadow_squire": 3,
+          "tff_festival_banner": 2,
+          "hvb_gatehouse_guardian": 3,
+          "hvb_dawnwing_pegasus": 2,
+          "hvb_burrow_badger": 3,
+          "tff_hedge_hog": 3,
+          "hvb_sudden_bloom": 3,
+          "hvb_puffcap_sprout": 3,
+          "tff_shieldmaiden": 2,
+          "hvb_village_rally": 1,
+          "hvb_thicket_stag": 2
+        }
+      }
     },
     {
       "id": "pip",
@@ -302,21 +316,20 @@
       "battles": true,
       "battle_min_hearts": 0,
       "aggression": 0.6,
-      "reward": 40,
+      "reward": 25,
       "deck_name": "BIG MONSTERS",
       "deck": {
-        "hvb_burrow_badger": 3,
-        "hvb_mossback_tortoise": 3,
-        "hvb_sudden_bloom": 3,
         "hvb_puffcap_sprout": 3,
-        "hvb_thicket_stag": 3,
-        "hvb_harvest_festival": 2,
-        "hvb_elder_oakheart": 1,
-        "hvb_clockwork_mouse": 3,
+        "hvb_clockwork_mouse": 2,
+        "hvb_burrow_badger": 3,
         "hvb_patchwork_scarecrow": 3,
-        "hvb_cobblestone_golem": 3,
-        "hvb_prismatic_pebble": 2,
-        "hvb_bramblecrown_wyrm": 1
+        "hvb_sudden_bloom": 3,
+        "hvb_mossback_tortoise": 3,
+        "hvb_harvest_festival": 3,
+        "hvb_thicket_stag": 2,
+        "hvb_bell_hen": 3,
+        "hvb_meadow_squire": 3,
+        "hvb_cobblestone_golem": 2
       },
       "schedule": [
         {
@@ -382,19 +395,17 @@
       ],
       "set_decks": {
         "tff": {
-          "hvb_burrow_badger": 3,
-          "hvb_mossback_tortoise": 3,
-          "hvb_sudden_bloom": 2,
-          "tff_hedge_hog": 3,
-          "tff_treetop_lookout": 3,
-          "tff_rootstomp_bear": 2,
-          "tff_overgrow": 2,
-          "hvb_thicket_stag": 3,
-          "hvb_harvest_festival": 2,
-          "tff_paper_lantern_golem": 3,
+          "hvb_puffcap_sprout": 3,
+          "hvb_clockwork_mouse": 2,
+          "hvb_patchwork_scarecrow": 3,
+          "hvb_sudden_bloom": 3,
+          "hvb_harvest_festival": 3,
+          "hvb_thicket_stag": 2,
+          "hvb_bell_hen": 3,
+          "hvb_meadow_squire": 3,
           "hvb_cobblestone_golem": 2,
-          "hvb_bramblecrown_wyrm": 1,
-          "hvb_puffcap_sprout": 1
+          "tff_hedge_hog": 3,
+          "tff_treetop_lookout": 3
         }
       }
     },
@@ -412,7 +423,7 @@
       "battles": true,
       "battle_min_hearts": 0,
       "aggression": 0.3,
-      "reward": 80,
+      "reward": 40,
       "deck_name": "By The Book",
       "deck": {
         "hvb_shellback_crab": 3,
@@ -420,15 +431,13 @@
         "hvb_harbor_gull": 2,
         "hvb_lighthouse_insight": 2,
         "hvb_bubble_charm": 2,
-        "hvb_mist_heron": 2,
-        "hvb_keeper_wren": 1,
+        "hvb_bell_hen": 3,
         "hvb_meadow_squire": 3,
         "hvb_sunlit_blessing": 2,
         "hvb_gatehouse_guardian": 3,
         "hvb_dawnwing_pegasus": 2,
         "hvb_village_rally": 2,
-        "hvb_patchwork_scarecrow": 2,
-        "hvb_sunrise_seraph": 1
+        "hvb_patchwork_scarecrow": 3
       },
       "schedule": [
         {
@@ -491,19 +500,16 @@
         "tff": {
           "hvb_shellback_crab": 3,
           "hvb_otter_scout": 3,
-          "tff_tidepool_crab": 2,
-          "tff_frost_net": 2,
-          "tff_ripple_away": 1,
           "hvb_lighthouse_insight": 2,
-          "tff_tidecaller": 1,
+          "hvb_bell_hen": 3,
           "hvb_meadow_squire": 3,
-          "tff_shieldmaiden": 2,
-          "hvb_gatehouse_guardian": 3,
-          "tff_broom_knight": 2,
           "hvb_sunlit_blessing": 2,
+          "hvb_gatehouse_guardian": 3,
           "hvb_dawnwing_pegasus": 2,
-          "hvb_sunrise_seraph": 1,
-          "hvb_bubble_charm": 1
+          "hvb_village_rally": 2,
+          "hvb_patchwork_scarecrow": 3,
+          "tff_frost_net": 2,
+          "tff_tidepool_crab": 2
         }
       }
     },
@@ -520,24 +526,21 @@
       "battles": true,
       "battle_min_hearts": 0,
       "aggression": 0.5,
-      "reward": 90,
+      "reward": 55,
       "deck_name": "Nightwater",
       "deck": {
         "hvb_nightshade_viper": 3,
         "hvb_dusk_bat": 3,
         "hvb_otter_scout": 3,
-        "hvb_mist_heron": 2,
         "hvb_withering_hex": 3,
         "hvb_moonfall": 2,
         "hvb_midnight_bargain": 2,
-        "hvb_lantern_moth": 2,
-        "hvb_harbor_gull": 2,
-        "hvb_shellback_crab": 2,
+        "hvb_lantern_moth": 3,
+        "hvb_harbor_gull": 3,
+        "hvb_shellback_crab": 3,
         "hvb_lighthouse_insight": 2,
         "hvb_countess_of_gloam": 1,
-        "hvb_last_lamplighter": 1,
-        "hvb_keeper_wren": 1,
-        "hvb_prismatic_pebble": 1
+        "hvb_mist_heron": 2
       },
       "schedule": [
         {
@@ -597,18 +600,16 @@
           "hvb_nightshade_viper": 3,
           "hvb_dusk_bat": 3,
           "hvb_otter_scout": 3,
-          "tff_hollow_owl": 2,
           "hvb_withering_hex": 3,
           "hvb_moonfall": 2,
-          "tff_night_market_ghoul": 2,
-          "tff_shadow_shove": 1,
-          "tff_current_rider": 2,
-          "tff_moonlit_masquerade": 1,
-          "hvb_last_lamplighter": 1,
-          "hvb_countess_of_gloam": 1,
+          "hvb_midnight_bargain": 2,
           "hvb_lantern_moth": 3,
           "hvb_harbor_gull": 2,
-          "hvb_lighthouse_insight": 1
+          "hvb_shellback_crab": 3,
+          "hvb_lighthouse_insight": 2,
+          "hvb_countess_of_gloam": 1,
+          "hvb_mist_heron": 2,
+          "tff_shadow_shove": 1
         }
       }
     }

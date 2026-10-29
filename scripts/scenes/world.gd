@@ -114,7 +114,7 @@ func _intro() -> void:
 		"Welcome to Maplebrook, %s. The moving boxes can wait." % Game.player_name,
 		"You brought your starter deck and two fresh Hearthvale boosters. Press [P] to open them whenever you like.",
 		"The Gilded Deck card shop is just up the road. Everyone in town plays Sparkfolk there sooner or later.",
-		"Sparkfolk is easy to learn: you get one more Spark every turn to play cards, creatures fight whoever is across their lane, and open lanes hit your opponent's Heart.",
+		"Gus, the shop owner, teaches every newcomer. Go say hi. He's gruff, but he's a softie.",
 		"Walk with WASD / arrows. Talk and interact with E or Space. [B] Binder, [K] Decks, [Esc] Menu.",
 	])
 	await dialogue.closed
@@ -431,6 +431,8 @@ func _talk_to(id: String) -> void:
 			best = k
 	var lines: Array = tiers[best]
 	var line: String = lines[(Game.day + hash(id)) % lines.size()]
+	if id == "gus" and not Game.flags.get("tutorial_done", false):
+		line = "New face, huh? You play Sparkfolk? ...No? Sit down, sit down. Ten minutes and you'll know everything that matters."
 	if not Game.talked_today.has(id):
 		Game.talked_today[id] = true
 		Game.add_friendship(id, 25)
@@ -442,6 +444,8 @@ func _npc_menu(id: String, title: String, lines: Array) -> void:
 	var n := CardDB.npc(id)
 	var choices: Array = []
 	if id == "gus":
+		var done: bool = Game.flags.get("tutorial_done", false)
+		choices.append({ "text": "Replay lesson" if done else "Learn Sparkfolk!", "cb": _start_tutorial })
 		choices.append({ "text": "Shop", "cb": func(): _go("shop") })
 	if n.get("battles", false):
 		var need := int(n.get("battle_min_hearts", 0))
@@ -452,6 +456,13 @@ func _npc_menu(id: String, title: String, lines: Array) -> void:
 		"cb": func(): _trade(id) })
 	choices.append({ "text": "Bye", "cb": Callable() })
 	dialogue.open(title, lines, choices, _portrait(id))
+
+
+func _start_tutorial() -> void:
+	_save_position()
+	Game.battle_request = { "opponent": "gus", "best_of": 1, "context": "tutorial" }
+	Game.return_scene = "world"
+	Game.goto("battle")
 
 
 func _battle_menu(id: String) -> void:

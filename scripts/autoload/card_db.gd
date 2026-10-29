@@ -13,6 +13,7 @@ var npc_order: Array = []
 var starters: Array = []
 var achievements: Dictionary = {}
 var maps: Dictionary = {}
+var tutorial: Dictionary = {}
 
 
 func _ready() -> void:
@@ -38,6 +39,7 @@ func load_all() -> void:
 		npc_order.append(n["id"])
 	starters = _read_json("res://data/starters.json").get("starters", [])
 	achievements = _read_json("res://data/achievements.json")
+	tutorial = _read_json("res://data/tutorial.json")
 	for m in ["town", "shop", "home"]:
 		maps[m] = _read_json("res://data/maps/%s.json" % m)
 
