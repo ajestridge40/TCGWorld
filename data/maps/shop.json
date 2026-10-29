@@ -1,0 +1,31 @@
+{
+  "id": "shop",
+  "name": "The Gilded Deck",
+  "w": 20,
+  "h": 14,
+  "base": "wood",
+  "outdoor": false,
+  "rects": [
+    { "tile": "wall", "r": [0, 0, 20, 3] },
+    { "tile": "wall", "r": [0, 0, 1, 14] },
+    { "tile": "wall", "r": [19, 0, 1, 14] },
+    { "tile": "wall", "r": [0, 13, 10, 1] },
+    { "tile": "wall", "r": [11, 13, 9, 1] },
+    { "tile": "rug", "r": [8, 9, 4, 3] }
+  ],
+  "doors": [ { "pos": [10, 13], "to": "town", "spawn": [23, 10] } ],
+  "decor": [
+    { "type": "pack_wall", "r": [2, 1, 8, 2] },
+    { "type": "poster", "pos": [12, 1] },
+    { "type": "poster", "pos": [14, 1] },
+    { "type": "board", "pos": [16, 2], "action": "tournament" },
+    { "type": "counter", "r": [2, 5, 7, 1], "action": "shop" },
+    { "type": "register", "pos": [7, 5], "action": "shop" },
+    { "type": "case", "r": [2, 9, 4, 1], "action": "singles" },
+    { "type": "table", "r": [12, 6, 3, 2] },
+    { "type": "table", "r": [12, 10, 3, 2] },
+    { "type": "plant", "pos": [18, 3] },
+    { "type": "plant", "pos": [1, 12] },
+    { "type": "coffee", "pos": [17, 12], "text": "The coffee pot. Free refills, says a sticky note in Gus's handwriting." }
+  ]
+}

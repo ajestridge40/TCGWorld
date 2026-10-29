@@ -1,0 +1,44 @@
+{
+  "sell_prices": { "common": 2, "uncommon": 6, "rare": 25, "ultra": 80, "secret": 300 },
+  "single_prices": { "common": 6, "uncommon": 18, "rare": 70, "ultra": 220, "secret": 900 },
+  "foil_multiplier": 3,
+  "products": [
+    { "id": "pack_hvb", "name": "Hearthvale Booster", "kind": "pack", "set": "hvb", "price": 100, "min_rank": 1,
+      "desc": "10 cards. 1 Rare or better. 1 in 4 packs has a foil." },
+    { "id": "bundle_hvb", "name": "Hearthvale Bundle", "kind": "bundle", "set": "hvb", "packs": 6, "price": 540, "min_rank": 1,
+      "desc": "6 boosters, tied with a little ribbon. Saves you 60 coins." },
+    { "id": "mystery_box", "name": "Gus's Mystery Box", "kind": "mystery", "set": "hvb", "price": 250, "min_rank": 2,
+      "desc": "Gus won't say what's inside. Between 2 and 5 packs, or a guaranteed Rare+ single." },
+    { "id": "collector_hvb", "name": "Collector Booster", "kind": "pack", "set": "hvb", "variant": "collector", "price": 400, "min_rank": 3,
+      "desc": "Fewer commons, all foils, guaranteed Ultra Rare or better." },
+
+    { "id": "sleeves_basic", "name": "Plain Sleeves", "kind": "supply", "price": 30, "min_rank": 1, "desc": "Protect your cards. Gus will respect you more." },
+    { "id": "sleeves_maple", "name": "Maple Leaf Sleeves", "kind": "supply", "price": 120, "min_rank": 2, "desc": "Autumn-colored sleeves. Cards in battle use maple backs." },
+    { "id": "binder_leather", "name": "Leather Binder", "kind": "supply", "price": 200, "min_rank": 1, "desc": "A sturdy binder. Your collection screen gets a leather cover." },
+    { "id": "deckbox_wood", "name": "Wooden Deck Box", "kind": "supply", "price": 80, "min_rank": 1, "desc": "Holds up to 4 extra deck slots." },
+    { "id": "playmat_meadow", "name": "Meadow Playmat", "kind": "supply", "price": 150, "min_rank": 1, "desc": "A soft green playmat for your side of the table." },
+    { "id": "playmat_starry", "name": "Starry Night Playmat", "kind": "supply", "price": 350, "min_rank": 3, "desc": "Deep blue, speckled with tiny stars." }
+  ],
+  "collector_pack": {
+    "slots": [
+      { "rarity": "uncommon", "count": 3, "foil": true },
+      { "weights": { "rare": 100 }, "count": 1, "foil": true },
+      { "weights": { "ultra": 85, "secret": 15 }, "count": 1, "foil": true }
+    ]
+  },
+  "tournament": {
+    "name": "Saturday Showdown",
+    "day": 5,
+    "from": 17,
+    "to": 22,
+    "entry": 50,
+    "rounds": 3,
+    "prizes": {
+      "3": { "coins": 300, "packs": 4, "trophy": "showdown_gold" },
+      "2": { "coins": 100, "packs": 2 },
+      "1": { "coins": 0, "packs": 1 },
+      "0": { "coins": 0, "packs": 1 }
+    }
+  },
+  "shift": { "hours": 4, "pay": 110, "friend": "gus", "friend_points": 30, "min_hearts": 2, "open": 9, "close": 18 }
+}

@@ -1,0 +1,29 @@
+{
+  "ranks": [
+    { "rank": 1, "title": "Newcomer", "xp": 0 },
+    { "rank": 2, "title": "Pack Cracker", "xp": 150 },
+    { "rank": 3, "title": "Binder Keeper", "xp": 450 },
+    { "rank": 4, "title": "Table Regular", "xp": 1000 },
+    { "rank": 5, "title": "Town Champion", "xp": 2000 },
+    { "rank": 6, "title": "Legendary Collector", "xp": 4000 }
+  ],
+  "xp": { "pack_opened": 10, "new_card": 5, "battle_win": 25, "battle_loss": 8, "tournament_round_win": 30, "trade": 15, "set_complete": 300 },
+  "achievements": [
+    { "id": "first_pack", "name": "Fresh Foil Smell", "desc": "Open your first booster pack." },
+    { "id": "first_rare", "name": "Shiny!", "desc": "Pull a Rare or better." },
+    { "id": "first_ultra", "name": "Hands Are Shaking", "desc": "Pull an Ultra Rare." },
+    { "id": "first_secret", "name": "First Secret Rare", "desc": "Pull a Secret Rare. Tell everyone." },
+    { "id": "first_foil", "name": "It Catches The Light", "desc": "Pull a foil card." },
+    { "id": "first_win", "name": "Kitchen Table Hero", "desc": "Win your first battle." },
+    { "id": "beat_everyone", "name": "Played The Whole Town", "desc": "Win a battle against every townsfolk." },
+    { "id": "tournament_win", "name": "Saturday Champion", "desc": "Go 3-0 in the Saturday Showdown." },
+    { "id": "set_25", "name": "Getting Started", "desc": "Collect 25% of Hearthvale Beginnings." },
+    { "id": "set_50", "name": "Halfway There", "desc": "Collect 50% of Hearthvale Beginnings." },
+    { "id": "set_100", "name": "Complete A Set", "desc": "Collect every card in Hearthvale Beginnings." },
+    { "id": "first_trade", "name": "Fair Trade", "desc": "Complete a trade with a townsfolk." },
+    { "id": "trade_everyone", "name": "Trade With Every Townsfolk", "desc": "Trade with every townsfolk at least once." },
+    { "id": "best_friend", "name": "Regular", "desc": "Reach 4 hearts with anyone." },
+    { "id": "first_shift", "name": "Behind The Counter", "desc": "Work a shift at the Gilded Deck." },
+    { "id": "rich", "name": "Pocket Full Of Coins", "desc": "Hold 2,000 coins at once." }
+  ]
+}

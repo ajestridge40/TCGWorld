@@ -1,0 +1,40 @@
+{
+  "starters": [
+    {
+      "id": "hearthfire_pals",
+      "name": "Hearthfire Pals",
+      "colors": ["ember", "grove"],
+      "blurb": "Foxes, badgers and a big old tree. Hit hard, hit early, grow strong.",
+      "cards": {
+        "hvb_kindling_fox": 3, "hvb_hearth_salamander": 3, "hvb_spark_toss": 3, "hvb_brick_oven_golem": 2,
+        "hvb_flame_juggler": 2, "hvb_bonfire_rush": 1, "hvb_burrow_badger": 2, "hvb_mossback_tortoise": 2,
+        "hvb_sudden_bloom": 2, "hvb_puffcap_sprout": 1, "hvb_thicket_stag": 1, "hvb_elder_oakheart": 1,
+        "land_ember": 9, "land_grove": 8
+      }
+    },
+    {
+      "id": "lighthouse_watch",
+      "name": "Lighthouse Watch",
+      "colors": ["tide", "sun"],
+      "blurb": "Gulls, knights and a very sensible lighthouse keeper. Fly over, hold the line.",
+      "cards": {
+        "hvb_harbor_gull": 2, "hvb_otter_scout": 2, "hvb_ripple_away": 2, "hvb_shellback_crab": 2,
+        "hvb_mist_heron": 2, "hvb_frost_net": 2, "hvb_keeper_wren": 1, "hvb_bell_hen": 3,
+        "hvb_meadow_squire": 3, "hvb_sunlit_blessing": 2, "hvb_gatehouse_guardian": 2,
+        "land_tide": 9, "land_sun": 8
+      }
+    },
+    {
+      "id": "twilight_garden",
+      "name": "Twilight Garden",
+      "colors": ["moon", "grove"],
+      "blurb": "Moths, vipers and mushrooms. Trade up, drain out, outlast everyone.",
+      "cards": {
+        "hvb_dusk_bat": 2, "hvb_lantern_moth": 3, "hvb_withering_hex": 2, "hvb_nightshade_viper": 3,
+        "hvb_midnight_bargain": 1, "hvb_moonfall": 1, "hvb_countess_of_gloam": 1, "hvb_burrow_badger": 3,
+        "hvb_mossback_tortoise": 2, "hvb_sudden_bloom": 2, "hvb_puffcap_sprout": 2, "hvb_thicket_stag": 1,
+        "land_moon": 9, "land_grove": 8
+      }
+    }
+  ]
+}

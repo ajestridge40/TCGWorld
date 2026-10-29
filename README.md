@@ -1,0 +1,57 @@
+# TCG World: Maplebrook
+
+A cozy 2D pixel-art life sim about the local card-shop scene. Move to the small
+town of Maplebrook, rip booster packs at **The Gilded Deck**, fill your binder,
+trade with the townsfolk, and play Magic-style card battles at the kitchen table
+or in the Saturday Showdown.
+
+Built with **Godot 4.3** and GDScript. No external assets yet: card art,
+characters, the town and all audio are generated procedurally at runtime, so
+the project runs straight from a clone.
+
+## Running
+
+1. Install [Godot 4.3](https://godotengine.org/download) (standard build, not .NET).
+2. Open `project.godot` in the editor and press **F5**, or run `godot --path .`.
+
+### Controls
+
+| Key | Action |
+|---|---|
+| WASD / arrows | Walk |
+| E / Space | Talk, interact, advance dialogue |
+| B | Binder |
+| K | Deck builder |
+| P | Open your sealed packs |
+| Esc | Menu (achievements, music, save & quit) |
+
+In battle: click a card in your hand to play it, **Attack...** to pick attackers,
+click your creature then an attacker to block, right-click or Esc cancels targeting.
+
+## What's in the vertical slice
+
+- **Hearthvale Beginnings**: 52 cards across five colors (Ember, Tide, Grove, Sun, Moon) plus colorless, with Common / Uncommon / Rare / Ultra Rare / Secret Rare and foils
+- Pack opening with drag-to-rip, rarity anticipation, foil shimmer, glow and sparkles
+- Binder, deck builder, three starter decks
+- A Magic-inspired battle system with an AI that has six personalities
+- A walkable town, card shop and home with a clock, NPC schedules and day/night
+- Shop: boosters, bundles, mystery boxes, collector boosters, supplies, daily singles, selling, part-time shifts
+- Friendship hearts, daily trades, Collector Rank, achievements, the Saturday Showdown tournament
+
+## Docs
+
+- [Architecture & data formats](docs/ARCHITECTURE.md)
+- [Roadmap](docs/ROADMAP.md)
+
+## Tests
+
+```bash
+godot --headless --path . res://tests/test_runner.tscn   # rules / packs / decks / AI / save
+godot --headless --path . res://tests/smoke_test.tscn    # loads every scene, plays 2 battles
+```
+
+## Adding a card set
+
+Drop a new JSON file in `data/sets/` following `hearthvale.json`. It's picked up
+automatically: packs, binder, deck builder and shop prices all read from it.
+When exporting builds, add `*.json` to *Filters to export non-resource files*.
