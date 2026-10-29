@@ -23,7 +23,7 @@ func load_all() -> void:
 	cards.clear()
 	sets.clear()
 	set_order.clear()
-	_make_basic_lands()
+	_make_special_cards()
 	var dir := DirAccess.open(SETS_DIR)
 	if dir:
 		var files := Array(dir.get_files())
@@ -42,17 +42,15 @@ func load_all() -> void:
 		maps[m] = _read_json("res://data/maps/%s.json" % m)
 
 
-func _make_basic_lands() -> void:
-	var land_names := { "ember": "Ember Hearth", "tide": "Tide Pool", "grove": "Grove Glade", "sun": "Sun Meadow", "moon": "Moon Hollow" }
-	var i := 0
-	for col in CardDef.COLORS:
-		i += 1
-		var c := CardDef.from_dict({
-			"id": "land_" + col, "name": land_names[col], "type": "land", "rarity": "basic",
-			"produces": col, "colors": [col],
-		}, "basic")
-		c.collector_number = i
-		cards[c.id] = c
+## Cards that exist outside of sets (given by the rules, never in packs).
+func _make_special_cards() -> void:
+	var penny := CardDef.from_dict({
+		"id": "lucky_penny", "name": "Lucky Penny", "type": "spell", "cost": 0, "rarity": "token",
+		"effects": [ { "on": "cast", "op": "spark", "amount": 1 } ],
+		"flavor": "The player going second gets one. It's only fair.",
+	}, "special")
+	penny.is_token = true
+	cards[penny.id] = penny
 
 
 func _load_set(path: String) -> void:
@@ -103,11 +101,13 @@ func cards_of_rarity(set_id: String, rarity: String) -> Array:
 	return out
 
 
-func basic_land_ids() -> Array:
-	var out: Array = []
-	for col in CardDef.COLORS:
-		out.append("land_" + col)
-	return out
+## Sets that are on shelves by the given day (sets release over time).
+func released_sets(day: int) -> Array:
+	return set_order.filter(func(sid): return int(sets[sid].get("release_day", 0)) <= day)
+
+
+func is_released(set_id: String, day: int) -> bool:
+	return int(sets.get(set_id, {}).get("release_day", 0)) <= day
 
 
 func product(id: String) -> Dictionary:
@@ -119,7 +119,7 @@ func product(id: String) -> Dictionary:
 
 func sell_price(card_id: String, foil: bool = false) -> int:
 	var c := get_card(card_id)
-	if c == null or c.is_basic():
+	if c == null or c.is_token:
 		return 0
 	var base: int = int(products.get("sell_prices", {}).get(c.rarity, 1))
 	return base * (int(products.get("foil_multiplier", 3)) if foil else 1)

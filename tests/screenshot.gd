@@ -15,6 +15,12 @@ func _ready() -> void:
 		"shop": Game.map_id = "shop"; Game.player_pos = Vector2i(10, 8)
 		"home": Game.map_id = "home"; Game.player_pos = Vector2i(6, 6); Game.flags["intro"] = true
 		"evening": Game.minutes = 20 * 60
+		"tff":
+			Game.day = 20
+			var r2 := RandomNumberGenerator.new()
+			r2.seed = 6
+			for i in 10:
+				Game.add_pulls(PackGenerator.open_pack("tff", r2))
 		"rich":
 			var r := RandomNumberGenerator.new()
 			r.seed = 5
@@ -25,6 +31,9 @@ func _ready() -> void:
 		Game.pending_packs = [{ "set": "hvb", "variant": "" }]
 	if scene == "battle":
 		Game.battle_request = { "opponent": "mira", "best_of": 1, "context": "casual" }
+		if setup == "midgame2":
+			Game.day = 20
+			Game.decks[0] = Deck.from_dict({ "name": "Tidefall Test", "cards": CardDB.npc("theo")["set_decks"]["tff"] })
 	var s: Node = load(Game.SCENES[scene]).instantiate()
 	get_tree().root.add_child.call_deferred(s)
 	var wait := 1.5
@@ -38,30 +47,46 @@ func _ready() -> void:
 		for i in n:
 			s._reveal_next()
 			await get_tree().create_timer(2.2).timeout
-	if scene == "battle" and setup == "midgame":
-		# Fast-forward a few AI-vs-AI turns so the board is busy.
+	if scene == "battle" and setup.begins_with("midgame"):
+		# Fast-forward AI-vs-AI turns so the board is busy, then hand control back.
+		if setup == "midgame2":
+			Game.day = 20
 		var ai0 := BattleAI.new(0.6)
 		while s.busy or s.mode == "idle":
 			await get_tree().process_frame
+		var e: BattleEngine = s.engine
 		for t in 9:
-			var e: BattleEngine = s.engine
 			var pi := e.active
 			var my_ai: BattleAI = ai0 if pi == 0 else s.ai
-			while true:
-				var a := my_ai.next_main_action(e, pi)
-				if a.is_empty(): break
-				e.cast(pi, a["card"], a["target"])
-			if e.turn > 2:
-				e.declare_attackers(my_ai.choose_attackers(e, pi))
-				if e.phase == BattleEngine.Phase.BLOCKS:
-					e.declare_blocks((s.ai if pi == 0 else ai0).choose_blocks(e, 1 - pi))
-					e.pass_tricks(); e.pass_tricks()
-			if e.is_over(): break
+			for phase in 2:
+				while true:
+					var a := my_ai.next_action(e, pi)
+					if a.is_empty():
+						break
+					if a["kind"] == "move":
+						e.move(pi, a["uid"], a["lane"])
+					else:
+						e.play(pi, a["card"], a["lane"], a["target"])
+				if phase == 0 and e.turn > 2:
+					e.attack(my_ai.choose_attackers(e, pi))
+			if e.is_over():
+				break
 			if t < 8 or e.active != 0:
 				e.end_turn()
-		s.mode = "main"
+		e.attacked = false
+		s.mode = "play"
 		s._refresh()
 		await get_tree().create_timer(0.5).timeout
+		if args.size() > 4 and args[4] == "attack":
+			s._on_main_button()
+			await get_tree().create_timer(0.3).timeout
+		if args.size() > 4 and args[4] == "place":
+			for c in e.me(0).hand:
+				if c.def.is_creature():
+					e.me(0).sparks = 10
+					s._try_play(c)
+					break
+			await get_tree().create_timer(0.3).timeout
 	if scene == "world" and setup == "talk":
 		s._talk_to(s.npcs.keys()[0])
 		await get_tree().create_timer(2.0).timeout

@@ -113,7 +113,8 @@ func _intro() -> void:
 	dialogue.open("", [
 		"Welcome to Maplebrook, %s. The moving boxes can wait." % Game.player_name,
 		"You brought your starter deck and two fresh Hearthvale boosters. Press [P] to open them whenever you like.",
-		"The Gilded Deck card shop is just up the road. Everyone in town ends up there sooner or later.",
+		"The Gilded Deck card shop is just up the road. Everyone in town plays Sparkfolk there sooner or later.",
+		"Sparkfolk is easy to learn: you get one more Spark every turn to play cards, creatures fight whoever is across their lane, and open lanes hit your opponent's Heart.",
 		"Walk with WASD / arrows. Talk and interact with E or Space. [B] Binder, [K] Decks, [Esc] Menu.",
 	])
 	await dialogue.closed

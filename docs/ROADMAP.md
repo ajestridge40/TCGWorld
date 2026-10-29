@@ -7,7 +7,7 @@
 - [x] Premium pack opening: drag-to-rip, anticipation by rarity, flip, glow, flash, sparkles, NEW badges, summary
 - [x] Collection with foil tracking, binder with 3×3 pages, completion % by rarity, filters, inspect
 - [x] Deck builder: copy limits by rarity, ownership checks, basic lands, mana curve, multiple decks
-- [x] Magic-style battle engine (lands, creatures, instants/sorceries, 9 keywords, combat tricks)
+- [x] ~~Magic-style battle engine~~ (replaced by Sparkfolk in 0.5)
 - [x] AI opponents with per-NPC personality and decks; Bo1 and Bo3
 - [x] Walkable town, card shop and home; doors; NPC schedules; day/night; sleep; pass out at 2am
 - [x] Gilded Deck shop: packs, bundles, mystery box, collector packs, supplies, daily singles, selling, shifts
@@ -15,6 +15,15 @@
 - [x] Saturday Showdown tournament (3 best-of-one rounds, prizes, trophies)
 - [x] Collector Rank XP, 16 achievements, toasts
 - [x] Save/load, procedural audio, headless tests + smoke test + screenshot tool
+
+## Milestone 0.5 — Our own card game: Sparkfolk ✅
+
+- [x] Replaced the Magic-style rules with **Sparkfolk**: +1 Spark per turn (no lands), 30-card two-color decks, 4 lanes, attacks go straight across
+- [x] Rebuilt Set 1 (47 cards, tier 1: Swift / Soar / Shield / Enter) and added Set 2 **Tidefall Festival** (30 cards, tier 2: Reach / Sweep / Move / Last Breath / Strike / Freeze / Push / Bounce), releasing on day 15
+- [x] Stat-budget balance model + tests that reject off-budget cards and too-complex mechanics per tier
+- [x] AI round-robin matchup test; balance simulator with card-swap experiments
+- [x] NPC decks evolve when a set releases; shops, binder and singles respect release dates
+- [x] New battle UI: lane placement, play-over-your-own-creature, Move, attack forecast badges, Spark meter
 
 ## Milestone 1 — Make the slice feel finished (next)
 
@@ -31,10 +40,11 @@ Focus: polish what exists before adding systems.
 
 ## Milestone 2 — Deeper card game
 
-- [ ] Set 2 (**Tidefall Festival**, ~60 cards, unlocks at Rank 3) to prove the multi-set pipeline; shop rotation
-- [ ] A real stack + priority (respond to spells), "on your opponent's turn" instants
-- [ ] More mechanics: counters, auras/equipment, activated abilities, multi-blocking with damage order
-- [ ] Sideboarding between Bo3 games (15-card sideboard)
+- [ ] Set 3 **Lanternlight Fair** (tier 3): Kindle (grows each turn), Ally (bonus beside a friend), Echo (replay from discard), lane terrain
+- [ ] Set 4 **Frostfall Market** (tier 4): "choose one" spells, Charge counters, a second Spark sink
+- [ ] Teach the AI tier-2 mechanics better (it under-uses Push and Move today)
+- [ ] Rotation/format options: "Hearthvale only" casual tables, "all sets" Showdown
+- [ ] Sideboarding between Bo3 games (10-card sideboard)
 - [ ] **Draft** and **Sealed** events at the shop (Game already tracks sealed packs; needs pick UI + AI drafters)
 - [ ] AI: deck-aware mulligans, bluffing with open mana, smarter racing math
 - [ ] Deck import/export as text

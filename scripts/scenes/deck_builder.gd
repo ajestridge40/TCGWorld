@@ -1,6 +1,6 @@
 extends Control
 ## Deck builder: pick a deck, click cards in your collection to add them,
-## right-click (or click in the list) to remove. Basic lands are free.
+## right-click (or click in the list) to remove.
 
 const CARD_W := 74.0
 
@@ -38,7 +38,7 @@ func _ready() -> void:
 	help.position = Vector2(752, 300)
 	help.custom_minimum_size = Vector2(196, 0)
 	add_child(help)
-	var hl := UIKit.label("Click: add · Right-click: remove\n40-60 cards. Max 4 per common or uncommon, 2 per rare, 1 per ultra/secret. ~17 lands is a good start.", 11, UIKit.INK_SOFT)
+	var hl := UIKit.label("Click: add · Right-click: remove\nExactly 30 cards, up to 2 colors (colorless goes anywhere). Max 3 per common/uncommon, 2 per rare, 1 per ultra/secret. Aim for lots of 1-3 cost cards.", 11, UIKit.INK_SOFT)
 	hl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	hl.custom_minimum_size.x = 176
 	help.add_child(hl)
@@ -89,29 +89,12 @@ func _build_left() -> void:
 	curve.custom_minimum_size = Vector2(236, 46)
 	v.add_child(curve)
 	var sc := ScrollContainer.new()
-	sc.custom_minimum_size = Vector2(236, 250)
+	sc.custom_minimum_size = Vector2(236, 300)
 	sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	list_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	list_box.add_theme_constant_override("separation", 1)
 	sc.add_child(list_box)
 	v.add_child(sc)
-	var lands := HBoxContainer.new()
-	lands.add_theme_constant_override("separation", 2)
-	v.add_child(UIKit.label("Basic lands", 13, UIKit.INK_SOFT))
-	v.add_child(lands)
-	for col in CardDef.COLORS:
-		var id: String = "land_" + col
-		var b := Button.new()
-		b.text = "+"
-		b.custom_minimum_size = Vector2(44, 26)
-		b.add_theme_stylebox_override("normal", UIKit.panel_style(UIKit.CARD_COLORS[col].lightened(0.3), UIKit.CARD_COLORS[col].darkened(0.3), 2, 4))
-		b.add_theme_stylebox_override("hover", UIKit.panel_style(UIKit.CARD_COLORS[col].lightened(0.5), UIKit.CARD_COLORS[col].darkened(0.3), 2, 4))
-		b.tooltip_text = "Add a %s (right-click removes)" % CardDB.get_card(id).name
-		b.gui_input.connect(func(ev):
-			if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_RIGHT:
-				_remove(id))
-		b.pressed.connect(func(): _add(id))
-		lands.add_child(b)
 	v.add_child(status)
 	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	status.custom_minimum_size.x = 236
@@ -173,15 +156,13 @@ func _refresh_list() -> void:
 	ids.sort_custom(func(a, b):
 		var ca: CardDef = CardDB.get_card(a)
 		var cb: CardDef = CardDB.get_card(b)
-		if ca.is_land() != cb.is_land():
-			return cb.is_land()
-		if ca.mana_value() != cb.mana_value():
-			return ca.mana_value() < cb.mana_value()
+		if ca.cost != cb.cost:
+			return ca.cost < cb.cost
 		return ca.name < cb.name)
 	for id in ids:
 		var c: CardDef = CardDB.get_card(id)
 		var row := Button.new()
-		row.text = "%dx  %s" % [dk.cards[id], c.name]
+		row.text = "(%d)  %dx  %s" % [c.cost, dk.cards[id], c.name]
 		row.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		row.add_theme_font_size_override("font_size", 13)
 		var st := UIKit.panel_style(UIKit.card_color(c).lightened(0.55), UIKit.card_color(c).darkened(0.2), 1, 3)
@@ -196,7 +177,8 @@ func _refresh_list() -> void:
 		row.mouse_entered.connect(func(): _show_preview(c, false))
 		list_box.add_child(row)
 	var n := dk.size()
-	count_label.text = "%d cards · %d lands" % [n, dk.land_count()]
+	var cols: Array = dk.colors().map(func(col): return CardDef.COLOR_NAMES[col])
+	count_label.text = "%d/%d · %s" % [n, Deck.SIZE, " + ".join(cols) if not cols.is_empty() else "no colors"]
 	var errs := dk.validate(Game.collection)
 	if errs.is_empty():
 		status.text = "✓ Deck is legal and ready to play."
@@ -223,8 +205,8 @@ func _pool_ids() -> Array:
 	out.sort_custom(func(a, b):
 		var ca: CardDef = CardDB.get_card(a)
 		var cb: CardDef = CardDB.get_card(b)
-		if ca.mana_value() != cb.mana_value():
-			return ca.mana_value() < cb.mana_value()
+		if ca.cost != cb.cost:
+			return ca.cost < cb.cost
 		return ca.collector_number < cb.collector_number)
 	return out
 
@@ -241,7 +223,7 @@ func _refresh_pool() -> void:
 		var cv := CardView.make(c, CARD_W, Game.collection.has_foil(id))
 		cv.badge = "%d/%d" % [used, limit]
 		cv.badge_color = UIKit.TEAL if used < limit else UIKit.INK_SOFT
-		cv.dim = used >= limit
+		cv.dim = used >= limit or not dk.color_allows(id)
 		cv.clicked.connect(func(_v, btn):
 			if btn == MOUSE_BUTTON_LEFT:
 				_add(id)
@@ -267,16 +249,25 @@ func _add(id: String) -> void:
 	var dk := _deck()
 	var c: CardDef = CardDB.get_card(id)
 	var used: int = dk.cards.get(id, 0)
-	if dk.size() >= Deck.MAX_SIZE:
-		Sfx.play("nope")
+	if dk.size() >= Deck.SIZE:
+		_warn("The deck is full (%d cards). Remove something first." % Deck.SIZE)
 		return
-	if not c.is_basic() and (used >= Game.collection.count(id) or used >= Deck.copy_limit(id)):
-		Sfx.play("nope")
+	if used >= Game.collection.count(id) or used >= Deck.copy_limit(id):
+		_warn("No more copies of %s allowed." % c.name)
+		return
+	if not dk.color_allows(id):
+		_warn("Decks can only use %d colors (plus colorless)." % Deck.MAX_COLORS)
 		return
 	dk.add(id)
 	Sfx.play("play", 1.2, -6.0)
 	_refresh_list()
 	_refresh_pool()
+
+
+func _warn(msg: String) -> void:
+	Sfx.play("nope")
+	status.text = msg
+	status.add_theme_color_override("font_color", Color("c0392b"))
 
 
 func _remove(id: String) -> void:
@@ -319,7 +310,7 @@ func _back() -> void:
 	Game.goto(Game.return_scene if Game.return_scene in ["world", "shop"] else "world")
 
 
-## Mana curve histogram (non-land cards by mana value, 0..6+).
+## Spark curve histogram (cards by cost, 0..7+).
 class CurveView:
 	extends Control
 	var deck: Deck
@@ -327,20 +318,16 @@ class CurveView:
 	func _draw() -> void:
 		if deck == null:
 			return
-		var buckets := [0, 0, 0, 0, 0, 0, 0]
-		for id in deck.cards:
-			var c: CardDef = CardDB.get_card(id)
-			if c.is_land():
-				continue
-			buckets[mini(6, c.mana_value())] += deck.cards[id]
+		var buckets := deck.curve()
 		var most := 1
 		for b in buckets:
 			most = maxi(most, b)
 		var font := get_theme_default_font()
-		var bw := size.x / 7.0
-		for i in 7:
+		var n := buckets.size()
+		var bw := size.x / n
+		for i in n:
 			var hgt: float = (size.y - 14) * buckets[i] / most
-			draw_rect(Rect2(i * bw + 3, size.y - 12 - hgt, bw - 6, hgt), UIKit.TEAL)
-			draw_string(font, Vector2(i * bw, size.y), str(i) if i < 6 else "6+", HORIZONTAL_ALIGNMENT_CENTER, bw, 10, UIKit.INK_SOFT)
+			draw_rect(Rect2(i * bw + 3, size.y - 12 - hgt, bw - 6, hgt), UIKit.GOLD.darkened(0.15))
+			draw_string(font, Vector2(i * bw, size.y), str(i) if i < n - 1 else "%d+" % i, HORIZONTAL_ALIGNMENT_CENTER, bw, 10, UIKit.INK_SOFT)
 			if buckets[i] > 0:
 				draw_string(font, Vector2(i * bw, size.y - 14 - hgt), str(buckets[i]), HORIZONTAL_ALIGNMENT_CENTER, bw, 10, UIKit.INK)

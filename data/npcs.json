@@ -4,20 +4,55 @@
       "id": "gus",
       "name": "Gus",
       "role": "Owner of the Gilded Deck",
-      "look": { "skin": "#e0b48c", "hair": "#c8c8c8", "shirt": "#6b4c8a", "pants": "#3b3550", "beard": true },
+      "look": {
+        "skin": "#e0b48c",
+        "hair": "#c8c8c8",
+        "shirt": "#6b4c8a",
+        "pants": "#3b3550",
+        "beard": true
+      },
       "battles": true,
       "battle_min_hearts": 3,
       "aggression": 0.55,
       "reward": 120,
       "deck_name": "Gus's Old Binder Deck",
       "deck": {
-        "hvb_kindling_fox": 2, "hvb_spark_toss": 3, "hvb_flame_juggler": 2, "hvb_hearth_salamander": 2,
-        "hvb_lantern_phoenix": 1, "hvb_cinderpaw_dragon": 1, "hvb_harbor_gull": 2, "hvb_otter_scout": 3,
-        "hvb_ripple_away": 2, "hvb_mist_heron": 2, "hvb_lighthouse_insight": 2, "hvb_skyharbor_whale": 1,
-        "land_ember": 9, "land_tide": 8
+        "hvb_kindling_fox": 2,
+        "hvb_hearth_salamander": 2,
+        "hvb_spark_toss": 3,
+        "hvb_flame_juggler": 2,
+        "hvb_festival_fireworks": 1,
+        "hvb_lantern_phoenix": 1,
+        "hvb_cinderpaw_dragon": 1,
+        "hvb_harbor_gull": 3,
+        "hvb_otter_scout": 3,
+        "hvb_shellback_crab": 2,
+        "hvb_lighthouse_insight": 2,
+        "hvb_mist_heron": 2,
+        "hvb_skyharbor_whale": 1,
+        "hvb_prismatic_pebble": 1,
+        "hvb_cobblestone_golem": 2,
+        "hvb_keeper_wren": 1,
+        "hvb_bubble_charm": 1
       },
-      "schedule": [ { "days": "all", "from": 8, "to": 24, "map": "shop", "pos": [5, 4] } ],
-      "trade_binder": ["hvb_mist_heron", "hvb_flame_juggler", "hvb_lighthouse_insight", "hvb_lantern_phoenix"],
+      "schedule": [
+        {
+          "days": "all",
+          "from": 8,
+          "to": 24,
+          "map": "shop",
+          "pos": [
+            5,
+            4
+          ]
+        }
+      ],
+      "trade_binder": [
+        "hvb_mist_heron",
+        "hvb_flame_juggler",
+        "hvb_lighthouse_insight",
+        "hvb_lantern_phoenix"
+      ],
       "talk": {
         "0": [
           "Hmph. New in town? Packs are on the wall, prices are on the tag, and no, I don't do haggling.",
@@ -31,7 +66,7 @@
         ],
         "4": [
           "Fine, fine. You've earned a game against the old binder deck. Don't cry when the dragon shows up.",
-          "Ever seen a First-Edition Kindling Fox? I pulled one in '94. Sold it to pay rent. Biggest regret of my life.",
+          "Ever seen a First-Edition Kindling Fox? I pulled one in '94, back when Sparkfolk was new. Sold it to pay rent. Biggest regret of my life.",
           "If you ever want to pick up a shift, the register could use someone who can count."
         ],
         "6": [
@@ -40,39 +75,79 @@
         ]
       },
       "battle_intro": "Alright, shuffle up. And cut my deck like you mean it.",
-      "win_lines": ["Hah! Good game. You've got a real feel for it, kid."],
-      "lose_lines": ["Dragon gets everybody eventually. Go again?"]
+      "win_lines": [
+        "Hah! Good game. You've got a real feel for it, kid."
+      ],
+      "lose_lines": [
+        "Dragon gets everybody eventually. Go again?"
+      ]
     },
     {
       "id": "mira",
       "name": "Mira",
       "role": "Competitive grinder",
-      "look": { "skin": "#c98e6a", "hair": "#d8452f", "shirt": "#2d2d38", "pants": "#4a3b5c" },
+      "look": {
+        "skin": "#c98e6a",
+        "hair": "#d8452f",
+        "shirt": "#2d2d38",
+        "pants": "#4a3b5c"
+      },
       "battles": true,
       "battle_min_hearts": 0,
       "aggression": 0.85,
       "reward": 70,
       "deck_name": "Red-Black Rush",
       "deck": {
-        "hvb_kindling_fox": 4, "hvb_hearth_salamander": 4, "hvb_spark_toss": 3, "hvb_flame_juggler": 2,
-        "hvb_festival_fireworks": 1, "hvb_dusk_bat": 3, "hvb_lantern_moth": 3, "hvb_nightshade_viper": 2,
-        "hvb_withering_hex": 2, "hvb_lantern_wraith": 1, "hvb_lantern_phoenix": 1,
-        "land_ember": 8, "land_moon": 6
+        "hvb_kindling_fox": 3,
+        "hvb_hearth_salamander": 3,
+        "hvb_spark_toss": 3,
+        "hvb_flame_juggler": 2,
+        "hvb_dusk_bat": 3,
+        "hvb_lantern_moth": 3,
+        "hvb_withering_hex": 2,
+        "hvb_nightshade_viper": 3,
+        "hvb_lantern_phoenix": 1,
+        "hvb_countess_of_gloam": 1,
+        "hvb_clockwork_mouse": 3,
+        "hvb_brick_oven_golem": 3
       },
       "schedule": [
-        { "days": "all", "from": 7, "to": 11, "map": "town", "pos": [30, 13] },
-        { "days": "all", "from": 12, "to": 23, "map": "shop", "pos": [11, 7] }
+        {
+          "days": "all",
+          "from": 7,
+          "to": 11,
+          "map": "town",
+          "pos": [
+            30,
+            13
+          ]
+        },
+        {
+          "days": "all",
+          "from": 12,
+          "to": 23,
+          "map": "shop",
+          "pos": [
+            11,
+            7
+          ]
+        }
       ],
-      "trade_binder": ["hvb_withering_hex", "hvb_lantern_wraith", "hvb_festival_fireworks", "hvb_countess_of_gloam"],
+      "trade_binder": [
+        "hvb_withering_hex",
+        "hvb_nightshade_viper",
+        "hvb_festival_fireworks",
+        "hvb_countess_of_gloam"
+      ],
       "talk": {
         "0": [
           "You're the new one, right? I'm Mira. I've won the last four Showdowns. Just so you know.",
-          "Tempo is everything. Curve out, swing, don't let them breathe.",
+          "Tempo is everything. Use every Spark, every turn. Don't let them breathe.",
           "Morning runs, afternoon testing. That's the routine."
         ],
         "2": [
-          "Not bad, not bad. Your mana base is still a mess, though.",
-          "Seventeen lands is a guideline. Fourteen is a lifestyle.",
+          "Not bad, not bad. Your curve is still a mess, though.",
+          "Thirty cards, three copies of everything that's good. That's the whole secret.",
           "I lose sometimes, you know. I just don't like it."
         ],
         "4": [
@@ -85,31 +160,107 @@
         ]
       },
       "battle_intro": "Fine. One game. Try to keep up.",
-      "win_lines": ["...Okay. That was a good line. I'll remember it."],
-      "lose_lines": ["Tempo. Told you."]
+      "win_lines": [
+        "...Okay. That was a good line. I'll remember it."
+      ],
+      "lose_lines": [
+        "Tempo. Told you."
+      ],
+      "set_decks": {
+        "tff": {
+          "hvb_kindling_fox": 3,
+          "hvb_hearth_salamander": 3,
+          "hvb_spark_toss": 3,
+          "hvb_flame_juggler": 2,
+          "hvb_brick_oven_golem": 3,
+          "hvb_dusk_bat": 3,
+          "hvb_lantern_moth": 3,
+          "hvb_nightshade_viper": 3,
+          "hvb_lantern_phoenix": 1,
+          "tff_firecracker": 2,
+          "tff_kiln_imp": 2,
+          "tff_festival_drake": 1,
+          "hvb_countess_of_gloam": 1
+        }
+      }
     },
     {
       "id": "rose",
       "name": "Nana Rose",
       "role": "Casual collector",
-      "look": { "skin": "#f0c8a8", "hair": "#f2f2f2", "shirt": "#d46a8a", "pants": "#7a5a8a" },
+      "look": {
+        "skin": "#f0c8a8",
+        "hair": "#f2f2f2",
+        "shirt": "#d46a8a",
+        "pants": "#7a5a8a"
+      },
       "battles": true,
       "battle_min_hearts": 0,
       "aggression": 0.35,
       "reward": 50,
       "deck_name": "Garden Party",
       "deck": {
-        "hvb_bell_hen": 3, "hvb_meadow_squire": 3, "hvb_gatehouse_guardian": 3, "hvb_village_rally": 2,
-        "hvb_dawnwing_pegasus": 2, "hvb_sunlit_blessing": 2, "hvb_burrow_badger": 3, "hvb_mossback_tortoise": 2,
-        "hvb_sudden_bloom": 2, "hvb_harvest_festival": 1,
-        "land_sun": 9, "land_grove": 8
+        "hvb_bell_hen": 3,
+        "hvb_meadow_squire": 3,
+        "hvb_sunlit_blessing": 2,
+        "hvb_gatehouse_guardian": 3,
+        "hvb_village_rally": 2,
+        "hvb_dawnwing_pegasus": 2,
+        "hvb_burrow_badger": 3,
+        "hvb_mossback_tortoise": 3,
+        "hvb_sudden_bloom": 2,
+        "hvb_puffcap_sprout": 2,
+        "hvb_harvest_festival": 2,
+        "hvb_captain_of_bells": 1,
+        "hvb_thicket_stag": 2
       },
       "schedule": [
-        { "days": "all", "from": 7, "to": 13, "map": "town", "pos": [32, 21] },
-        { "days": [1, 4], "from": 14, "to": 19, "map": "shop", "pos": [11, 11] },
-        { "days": [0, 2, 3, 5, 6], "from": 14, "to": 19, "map": "town", "pos": [23, 23] }
+        {
+          "days": "all",
+          "from": 7,
+          "to": 13,
+          "map": "town",
+          "pos": [
+            32,
+            21
+          ]
+        },
+        {
+          "days": [
+            1,
+            4
+          ],
+          "from": 14,
+          "to": 19,
+          "map": "shop",
+          "pos": [
+            11,
+            11
+          ]
+        },
+        {
+          "days": [
+            0,
+            2,
+            3,
+            5,
+            6
+          ],
+          "from": 14,
+          "to": 19,
+          "map": "town",
+          "pos": [
+            23,
+            23
+          ]
+        }
       ],
-      "trade_binder": ["hvb_dawnwing_pegasus", "hvb_harvest_festival", "hvb_village_rally", "hvb_captain_of_bells"],
+      "trade_binder": [
+        "hvb_dawnwing_pegasus",
+        "hvb_harvest_festival",
+        "hvb_village_rally",
+        "hvb_captain_of_bells"
+      ],
       "talk": {
         "0": [
           "Oh, hello dear! I don't play to win, I play for the pretty pictures. Look at this hen!",
@@ -130,33 +281,84 @@
         ]
       },
       "battle_intro": "Oh, a game? How lovely. Go easy on an old woman. Or don't, I don't mind.",
-      "win_lines": ["Well done, sweetheart! Here, have a cookie with your coins."],
-      "lose_lines": ["Oh my, did I win? The hens did all the work."]
+      "win_lines": [
+        "Well done, sweetheart! Here, have a cookie with your coins."
+      ],
+      "lose_lines": [
+        "Oh my, did I win? The hens did all the work."
+      ]
     },
     {
       "id": "pip",
       "name": "Pip",
       "role": "Kid who plays",
-      "look": { "skin": "#e8b090", "hair": "#6b3d1f", "shirt": "#4caf6a", "pants": "#3b5c8a", "small": true },
+      "look": {
+        "skin": "#e8b090",
+        "hair": "#6b3d1f",
+        "shirt": "#4caf6a",
+        "pants": "#3b5c8a",
+        "small": true
+      },
       "battles": true,
       "battle_min_hearts": 0,
       "aggression": 0.6,
       "reward": 40,
       "deck_name": "BIG MONSTERS",
       "deck": {
-        "hvb_burrow_badger": 4, "hvb_mossback_tortoise": 3, "hvb_sudden_bloom": 3, "hvb_puffcap_sprout": 3,
-        "hvb_thicket_stag": 2, "hvb_harvest_festival": 2, "hvb_clockwork_mouse": 3, "hvb_patchwork_scarecrow": 3,
-        "land_grove": 17
+        "hvb_burrow_badger": 3,
+        "hvb_mossback_tortoise": 3,
+        "hvb_sudden_bloom": 3,
+        "hvb_puffcap_sprout": 3,
+        "hvb_thicket_stag": 3,
+        "hvb_harvest_festival": 2,
+        "hvb_elder_oakheart": 1,
+        "hvb_clockwork_mouse": 3,
+        "hvb_patchwork_scarecrow": 3,
+        "hvb_cobblestone_golem": 3,
+        "hvb_prismatic_pebble": 2,
+        "hvb_bramblecrown_wyrm": 1
       },
       "schedule": [
-        { "days": [0, 1, 2, 3, 4], "from": 15, "to": 19, "map": "town", "pos": [16, 16] },
-        { "days": [5, 6], "from": 10, "to": 18, "map": "shop", "pos": [15, 11] }
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "from": 15,
+          "to": 19,
+          "map": "town",
+          "pos": [
+            16,
+            16
+          ]
+        },
+        {
+          "days": [
+            5,
+            6
+          ],
+          "from": 10,
+          "to": 18,
+          "map": "shop",
+          "pos": [
+            15,
+            11
+          ]
+        }
       ],
-      "trade_binder": ["hvb_thicket_stag", "hvb_clockwork_mouse", "hvb_cobblestone_golem", "hvb_harvest_festival"],
+      "trade_binder": [
+        "hvb_thicket_stag",
+        "hvb_clockwork_mouse",
+        "hvb_cobblestone_golem",
+        "hvb_harvest_festival"
+      ],
       "talk": {
         "0": [
           "Do you have any DRAGONS? I don't have any dragons. My mom says packs are a 'treat'.",
-          "My deck has a STAG. It TRAMPLES. Do you know what trample means? It means it TRAMPLES.",
+          "My deck has a STAG. It has SIX POWER. Do you know what six power means? It means it's HUGE.",
           "Tilly says hedgehogs are the best creature type. Tilly is RIGHT."
         ],
         "2": [
@@ -172,73 +374,199 @@
         ]
       },
       "battle_intro": "BATTLE! I'm gonna STOMP you! Respectfully!",
-      "win_lines": ["Aww man. That was SO cool though. Rematch tomorrow!"],
-      "lose_lines": ["I WON?! I'M TELLING EVERYONE!"]
+      "win_lines": [
+        "Aww man. That was SO cool though. Rematch tomorrow!"
+      ],
+      "lose_lines": [
+        "I WON?! I'M TELLING EVERYONE!"
+      ],
+      "set_decks": {
+        "tff": {
+          "hvb_burrow_badger": 3,
+          "hvb_mossback_tortoise": 3,
+          "hvb_sudden_bloom": 2,
+          "tff_hedge_hog": 3,
+          "tff_treetop_lookout": 3,
+          "tff_rootstomp_bear": 2,
+          "tff_overgrow": 2,
+          "hvb_thicket_stag": 3,
+          "hvb_harvest_festival": 2,
+          "tff_paper_lantern_golem": 3,
+          "hvb_cobblestone_golem": 2,
+          "hvb_bramblecrown_wyrm": 1,
+          "hvb_puffcap_sprout": 1
+        }
+      }
     },
     {
       "id": "theo",
       "name": "Judge Theo",
       "role": "Local judge",
-      "look": { "skin": "#8a5a3c", "hair": "#1f1a18", "shirt": "#2f6b8f", "pants": "#2a2a2a", "glasses": true },
+      "look": {
+        "skin": "#8a5a3c",
+        "hair": "#1f1a18",
+        "shirt": "#2f6b8f",
+        "pants": "#2a2a2a",
+        "glasses": true
+      },
       "battles": true,
       "battle_min_hearts": 0,
       "aggression": 0.3,
       "reward": 80,
       "deck_name": "By The Book",
       "deck": {
-        "hvb_harbor_gull": 2, "hvb_keeper_wren": 1, "hvb_shellback_crab": 3, "hvb_otter_scout": 3,
-        "hvb_ripple_away": 2, "hvb_lighthouse_insight": 2, "hvb_frost_net": 2, "hvb_mist_heron": 2,
-        "hvb_gatehouse_guardian": 2, "hvb_gentle_exile": 2, "hvb_dawnwing_pegasus": 2,
-        "land_tide": 9, "land_sun": 8
+        "hvb_shellback_crab": 3,
+        "hvb_otter_scout": 3,
+        "hvb_harbor_gull": 2,
+        "hvb_lighthouse_insight": 2,
+        "hvb_bubble_charm": 2,
+        "hvb_mist_heron": 2,
+        "hvb_keeper_wren": 1,
+        "hvb_meadow_squire": 3,
+        "hvb_sunlit_blessing": 2,
+        "hvb_gatehouse_guardian": 3,
+        "hvb_dawnwing_pegasus": 2,
+        "hvb_village_rally": 2,
+        "hvb_patchwork_scarecrow": 2,
+        "hvb_sunrise_seraph": 1
       },
       "schedule": [
-        { "days": "all", "from": 9, "to": 15, "map": "town", "pos": [38, 11] },
-        { "days": [3, 4, 5], "from": 16, "to": 23, "map": "shop", "pos": [15, 7] }
+        {
+          "days": "all",
+          "from": 9,
+          "to": 15,
+          "map": "town",
+          "pos": [
+            38,
+            11
+          ]
+        },
+        {
+          "days": [
+            3,
+            4,
+            5
+          ],
+          "from": 16,
+          "to": 23,
+          "map": "shop",
+          "pos": [
+            15,
+            7
+          ]
+        }
       ],
-      "trade_binder": ["hvb_frost_net", "hvb_gentle_exile", "hvb_mist_heron", "hvb_keeper_wren"],
+      "trade_binder": [
+        "hvb_bubble_charm",
+        "hvb_sunlit_blessing",
+        "hvb_mist_heron",
+        "hvb_keeper_wren"
+      ],
       "talk": {
         "0": [
           "Theo. Level two judge. If you ever have a rules question, I have an answer. Usually with a citation.",
-          "A creature with summoning sickness can still block. People forget that. Constantly.",
-          "Fun fact: flying creatures can only be blocked by creatures with flying or reach."
+          "Fresh creatures can't attack the turn they're played - unless they're Swift. They still guard their lane, though.",
+          "Fun fact: a Soar creature flies right over the lane, unless the creature across also Soars."
         ],
         "2": [
           "The community center used to host regionals. Maybe it will again, if someone fixes the roof.",
-          "Deathtouch means any amount of damage is enough. Even one. Even from a very small snake."
+          "Shield stops the first hit. Any hit. Even from a dragon. Pop it with something small first."
         ],
         "4": [
           "I don't play favorites. But if I did, hypothetically, you'd be on the list.",
-          "Between you and me: Mira's deck folds to an early wall. You didn't hear it from a judge."
+          "Between you and me: Mira's deck folds to a crab in every lane. You didn't hear it from a judge."
         ],
         "6": [
           "I'm thinking of running a draft night. I'd want you there. As a player, and as a friend."
         ]
       },
       "battle_intro": "A friendly game. I'll call my own triggers.",
-      "win_lines": ["Clean play. No infractions. Well done."],
-      "lose_lines": ["Good game. You missed a lethal on turn six, by the way."]
+      "win_lines": [
+        "Clean play. No infractions. Well done."
+      ],
+      "lose_lines": [
+        "Good game. You missed a lethal on turn six, by the way."
+      ],
+      "set_decks": {
+        "tff": {
+          "hvb_shellback_crab": 3,
+          "hvb_otter_scout": 3,
+          "tff_tidepool_crab": 2,
+          "tff_frost_net": 2,
+          "tff_ripple_away": 1,
+          "hvb_lighthouse_insight": 2,
+          "tff_tidecaller": 1,
+          "hvb_meadow_squire": 3,
+          "tff_shieldmaiden": 2,
+          "hvb_gatehouse_guardian": 3,
+          "tff_broom_knight": 2,
+          "hvb_sunlit_blessing": 2,
+          "hvb_dawnwing_pegasus": 2,
+          "hvb_sunrise_seraph": 1,
+          "hvb_bubble_charm": 1
+        }
+      }
     },
     {
       "id": "corwin",
       "name": "Corwin",
       "role": "Rival collector",
-      "look": { "skin": "#f2d0b4", "hair": "#e8d27a", "shirt": "#8a2f3c", "pants": "#1f2a3a" },
+      "look": {
+        "skin": "#f2d0b4",
+        "hair": "#e8d27a",
+        "shirt": "#8a2f3c",
+        "pants": "#1f2a3a"
+      },
       "battles": true,
       "battle_min_hearts": 0,
       "aggression": 0.5,
       "reward": 90,
       "deck_name": "Nightwater",
       "deck": {
-        "hvb_nightshade_viper": 3, "hvb_dusk_bat": 3, "hvb_otter_scout": 3, "hvb_mist_heron": 2,
-        "hvb_withering_hex": 3, "hvb_moonfall": 2, "hvb_midnight_bargain": 2, "hvb_lantern_wraith": 2,
-        "hvb_ripple_away": 2, "hvb_countess_of_gloam": 1,
-        "land_moon": 9, "land_tide": 8
+        "hvb_nightshade_viper": 3,
+        "hvb_dusk_bat": 3,
+        "hvb_otter_scout": 3,
+        "hvb_mist_heron": 2,
+        "hvb_withering_hex": 3,
+        "hvb_moonfall": 2,
+        "hvb_midnight_bargain": 2,
+        "hvb_lantern_moth": 2,
+        "hvb_harbor_gull": 2,
+        "hvb_shellback_crab": 2,
+        "hvb_lighthouse_insight": 2,
+        "hvb_countess_of_gloam": 1,
+        "hvb_last_lamplighter": 1,
+        "hvb_keeper_wren": 1,
+        "hvb_prismatic_pebble": 1
       },
       "schedule": [
-        { "days": "all", "from": 10, "to": 18, "map": "shop", "pos": [8, 10] },
-        { "days": "all", "from": 18, "to": 22, "map": "town", "pos": [42, 13] }
+        {
+          "days": "all",
+          "from": 10,
+          "to": 18,
+          "map": "shop",
+          "pos": [
+            8,
+            10
+          ]
+        },
+        {
+          "days": "all",
+          "from": 18,
+          "to": 22,
+          "map": "town",
+          "pos": [
+            42,
+            13
+          ]
+        }
       ],
-      "trade_binder": ["hvb_moonfall", "hvb_midnight_bargain", "hvb_countess_of_gloam", "hvb_prismatic_pebble"],
+      "trade_binder": [
+        "hvb_moonfall",
+        "hvb_midnight_bargain",
+        "hvb_countess_of_gloam",
+        "hvb_prismatic_pebble"
+      ],
       "talk": {
         "0": [
           "Oh. You collect too? How quaint. I have a complete Hearthvale set. Graded.",
@@ -258,8 +586,31 @@
         ]
       },
       "battle_intro": "If you insist. Try not to bend my sleeves.",
-      "win_lines": ["Hm. Lucky draw. ...Fine, good game."],
-      "lose_lines": ["As expected. Better cards, better results."]
+      "win_lines": [
+        "Hm. Lucky draw. ...Fine, good game."
+      ],
+      "lose_lines": [
+        "As expected. Better cards, better results."
+      ],
+      "set_decks": {
+        "tff": {
+          "hvb_nightshade_viper": 3,
+          "hvb_dusk_bat": 3,
+          "hvb_otter_scout": 3,
+          "tff_hollow_owl": 2,
+          "hvb_withering_hex": 3,
+          "hvb_moonfall": 2,
+          "tff_night_market_ghoul": 2,
+          "tff_shadow_shove": 1,
+          "tff_current_rider": 2,
+          "tff_moonlit_masquerade": 1,
+          "hvb_last_lamplighter": 1,
+          "hvb_countess_of_gloam": 1,
+          "hvb_lantern_moth": 3,
+          "hvb_harbor_gull": 2,
+          "hvb_lighthouse_insight": 1
+        }
+      }
     }
   ]
 }

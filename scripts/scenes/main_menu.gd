@@ -20,7 +20,7 @@ func _ready() -> void:
 	title.position = Vector2(0, 50)
 	title.size = Vector2(960, 80)
 	add_child(title)
-	var sub := UIKit.label("~ a cozy card-shop life in Maplebrook ~", 18, UIKit.GOLD, HORIZONTAL_ALIGNMENT_CENTER)
+	var sub := UIKit.label("~ a cozy Sparkfolk card-shop life in Maplebrook ~", 18, UIKit.GOLD, HORIZONTAL_ALIGNMENT_CENTER)
 	sub.position = Vector2(0, 132)
 	sub.size = Vector2(960, 30)
 	add_child(sub)
@@ -28,8 +28,11 @@ func _ready() -> void:
 	main_box.custom_minimum_size = Vector2(200, 0)
 	main_box.add_theme_constant_override("separation", 10)
 	add_child(main_box)
-	if Game.has_save():
+	if Game.has_save() and not Game.save_is_outdated():
 		main_box.add_child(UIKit.button("Continue", _continue))
+	elif Game.save_is_outdated():
+		var note := UIKit.label("Your old save is from before Sparkfolk.\nStart a new game to play the new rules.", 13, Color("fff3d6"), HORIZONTAL_ALIGNMENT_CENTER)
+		main_box.add_child(note)
 	main_box.add_child(UIKit.button("New Game", _show_new))
 	main_box.add_child(UIKit.button("Quit", func(): get_tree().quit()))
 	_build_new_panel()

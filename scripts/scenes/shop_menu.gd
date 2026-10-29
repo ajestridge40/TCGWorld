@@ -71,6 +71,11 @@ func _ready() -> void:
 	add_child(hint)
 	_build_tabs()
 	_say("welcome")
+	var newest := Game.newest_set()
+	var rd := int(CardDB.sets[newest].get("release_day", 0))
+	if rd > 0 and Game.day - rd < 7:
+		gus_line.text = "%s just hit the shelves! New tricks in this one: %s. Kids have been lined up since dawn." % [
+			CardDB.sets[newest]["name"], ", ".join(CardDB.sets[newest].get("new_mechanics", []).slice(0, 3))]
 	_refresh()
 	if Game.shop_tab != "":
 		for i in tabs.get_tab_count():
@@ -152,13 +157,29 @@ func _packs_tab() -> Control:
 	for p in CardDB.products["products"]:
 		if p["kind"] == "supply":
 			continue
+		if p.has("set") and not CardDB.is_released(p["set"], Game.day):
+			continue
 		var locked: bool = Game.rank < int(p.get("min_rank", 1))
 		var b := UIKit.button("Rank %d" % int(p["min_rank"]) if locked else UIKit.coins_text(int(p["price"])), func(): _buy(p), 100)
 		b.disabled = locked
-		s[1].add_child(_row(p["name"], p["desc"], b))
-	var odds := UIKit.label("Hearthvale odds: Rare 78% · Ultra Rare 18% · Secret Rare 4% per pack. 1 in 4 packs has a foil.", 12, UIKit.INK_SOFT)
-	odds.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	s[1].add_child(odds)
+		var desc: String = p["desc"]
+		if p.has("set") and p["set"] == Game.newest_set() and Game.released_sets().size() > 1:
+			desc = "NEW! " + desc
+		s[1].add_child(_row(p["name"], desc, b))
+	for set_id in Game.released_sets():
+		var info: Dictionary = CardDB.sets[set_id]
+		var w: Dictionary = info["pack"]["slots"].back().get("weights", {})
+		var odds := UIKit.label("%s: Rare %d%% · Ultra %d%% · Secret %d%% per pack. New mechanics: %s." % [
+			info["name"], int(w.get("rare", 0)), int(w.get("ultra", 0)), int(w.get("secret", 0)), ", ".join(info.get("new_mechanics", []))], 12, UIKit.INK_SOFT)
+		odds.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		s[1].add_child(odds)
+	for set_id in CardDB.set_order:
+		var rd := int(CardDB.sets[set_id].get("release_day", 0))
+		if rd > Game.day:
+			var days := rd - Game.day
+			var teaser := UIKit.label("Coming soon: %s, in %d day%s. %s" % [CardDB.sets[set_id]["name"], days, "" if days == 1 else "s", CardDB.sets[set_id].get("description", "")], 12, UIKit.TEAL.darkened(0.3))
+			teaser.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			s[1].add_child(teaser)
 	return s[0]
 
 
@@ -239,7 +260,7 @@ func _sell_tab() -> Control:
 		var id: String = parts[0]
 		var foil: bool = parts[1]
 		var c: CardDef = CardDB.get_card(id)
-		if c == null or c.is_basic():
+		if c == null or c.is_token:
 			continue
 		var h := HBoxContainer.new()
 		h.add_theme_constant_override("separation", 8)
@@ -313,13 +334,15 @@ func _buy(p: Dictionary) -> void:
 
 func _mystery(p: Dictionary) -> void:
 	var r := Game.rng
+	var sets := Game.released_sets()
+	var set_id: String = sets[r.randi_range(0, sets.size() - 1)]
 	if r.randf() < 0.7:
 		var n := r.randi_range(2, 5)
-		Game.add_sealed(p["set"], "", n)
-		gus_line.text = "Ha! %d packs in that one. Not bad, not bad." % n
+		Game.add_sealed(set_id, "", n)
+		gus_line.text = "Ha! %d %s packs in that one. Not bad, not bad." % [n, CardDB.sets[set_id]["name"]]
 	else:
 		var rar := PackGenerator.weighted_pick({ "rare": 75, "ultra": 20, "secret": 5 }, r)
-		var pool := CardDB.cards_of_rarity(p["set"], rar)
+		var pool := CardDB.cards_of_rarity(set_id, rar)
 		var id: String = pool[r.randi_range(0, pool.size() - 1)]
 		Game.add_pulls([{ "id": id, "foil": false }], false)
 		gus_line.text = "A single! [b]%s[/b]. %s" % [CardDB.get_card(id).name, "Whoa." if rar != "rare" else "Nice."]
@@ -371,7 +394,7 @@ func _fix_decks() -> void:
 	for dk in Game.decks:
 		for id in dk.cards.keys():
 			var c: CardDef = CardDB.get_card(id)
-			if not c.is_basic() and dk.cards[id] > Game.collection.count(id):
+			if dk.cards[id] > Game.collection.count(id):
 				dk.cards[id] = Game.collection.count(id)
 				if dk.cards[id] <= 0:
 					dk.cards.erase(id)
@@ -388,7 +411,7 @@ func _work_shift() -> void:
 	var stories := [
 		"You restock the pack wall, alphabetize the bulk bins and help a kid pick their first deck. Gus nods approvingly.",
 		"You sort three thousand commons. Somewhere in there was a foil. Gus lets you keep it. (He doesn't.)",
-		"A rush after school! You sell nine packs and settle a heated debate about trample.",
+		"A rush after school! You sell nine packs and settle a heated debate about whether Soar beats Reach.",
 	]
 	gus_line.text = stories[Game.stats["shifts"] % stories.size()] + " [b]+%dc[/b]" % int(sh["pay"])
 	_refresh()

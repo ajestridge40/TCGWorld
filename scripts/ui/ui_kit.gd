@@ -20,7 +20,7 @@ const CARD_COLORS := {
 	"multi": Color("c9a24a"),
 }
 const RARITY_COLORS := {
-	"basic": Color("9a8f80"), "common": Color("d9d4c7"), "uncommon": Color("9fd6e0"),
+	"token": Color("9a8f80"), "common": Color("d9d4c7"), "uncommon": Color("9fd6e0"),
 	"rare": Color("f2c14e"), "ultra": Color("ff86d6"), "secret": Color("b8fff4"),
 }
 

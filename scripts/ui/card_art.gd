@@ -70,9 +70,7 @@ static func generate(card: CardDef) -> Image:
 		var far := hy - 4 + int(sin(x * 0.1 + phase * 2.0) * 2.0)
 		for y in range(far, hy):
 			img.set_pixel(x, y, img.get_pixel(x, y).lerp(ground.lightened(0.25), 0.6))
-	if card.is_land():
-		_land_feature(img, card, r)
-	elif card.is_creature():
+	if card.is_creature():
 		_creature(img, card, r)
 	else:
 		_spell(img, card, r)
@@ -97,37 +95,15 @@ static func _ellipse(img: Image, cx: float, cy: float, rx: float, ry: float, c: 
 				img.set_pixel(x, y, c)
 
 
-static func _land_feature(img: Image, card: CardDef, r: RandomNumberGenerator) -> void:
-	match card.produces:
-		"ember":  # a cozy hearth fire
-			for i in 3:
-				_ellipse(img, 24 + i - 1, 22 - i * 3, 5 - i, 4, [Color("f25c54"), Color("f7b267"), Color("fff3b0")][i])
-		"tide":
-			for x in range(0, W, 6):
-				img.set_pixel(x + r.randi_range(0, 3), 26, Color.WHITE)
-		"grove":
-			for i in 4:
-				var tx := r.randi_range(4, 44)
-				_ellipse(img, tx, 16, 4, 6, Color("2d5a27"))
-				img.set_pixel(tx, 22, Color("5a3a22"))
-				img.set_pixel(tx, 23, Color("5a3a22"))
-		"sun":
-			for i in 8:
-				img.set_pixel(r.randi_range(0, W - 1), r.randi_range(24, H - 1), [Color("ffd166"), Color("ef476f"), Color.WHITE][i % 3])
-		"moon":
-			for i in 5:
-				_disc(img, r.randi_range(4, 44), r.randi_range(18, 28), 1, Color(1, 0.9, 0.5, 0.8))
-
-
 static func _creature(img: Image, card: CardDef, r: RandomNumberGenerator) -> void:
 	var body: Color = UIKit.card_color(card).lightened(r.randf_range(0.0, 0.3))
 	if card.main_color() == "moon":
 		body = body.lightened(0.25)
 	var dark := body.darkened(0.35)
-	var size := clampf(3.0 + card.power * 0.7 + card.toughness * 0.4, 5.0, 11.0)
+	var size := clampf(3.0 + card.power * 0.7 + card.health * 0.4, 5.0, 11.0)
 	var cx := 24.0 + r.randf_range(-4, 4)
 	var ground_y := 26.0
-	var flying := card.has_keyword("flying")
+	var flying := card.has_keyword("soar")
 	var cy := ground_y - size * 0.8 - (6.0 if flying else 0.0)
 	# Shadow
 	_ellipse(img, cx, ground_y + 1, size * 0.9, 1.5, Color(0, 0, 0, 0.25))

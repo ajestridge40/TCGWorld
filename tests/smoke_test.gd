@@ -92,8 +92,8 @@ func _scene_test() -> void:
 	s._inspect(CardDB.get_card("hvb_kindling_fox"))
 	s.queue_free()
 	s = await _load("decks")
-	s._add("land_sun")
-	s._remove("land_sun")
+	s._add("hvb_bell_hen")
+	s._remove("hvb_bell_hen")
 	s._new_deck()
 	s._delete_deck()
 	s.queue_free()
@@ -108,25 +108,23 @@ func _scene_test() -> void:
 			if s.busy:
 				continue
 			match s.mode:
-				"main":
-					# Cast whatever we can, then attack with everything.
-					var cast_one := false
+				"play":
+					# Play whatever we can afford, then attack, then end the turn.
+					var played := false
 					for c in s.engine.me(0).hand:
-						if s.engine.can_cast(0, c) and not c.def.is_instant():
-							s._try_cast(c)
-							if s.mode == "target":
-								s._try_target(s.pending_targets[0])
-							cast_one = true
+						if s.engine.can_play(0, c):
+							s._try_play(c)
+							played = true
 							break
-					if not cast_one:
+					if not played:
 						s._on_main_button()
-				"attack":
-					s.sel_attackers = s.engine.me(0).battlefield.filter(func(c): return c.can_attack()).map(func(c): return c.uid)
-					s._on_main_button()
-				"blocks", "tricks":
-					s._on_main_button()
+				"place":
+					var free: Array = s.engine.empty_lanes(0)
+					s.choose_lane(free[0] if not free.is_empty() else 0)
 				"target":
 					s._try_target(s.pending_targets[0])
+				"attack":
+					s._on_main_button()
 		check(s.result_layer.visible, "battle vs %s finished (turn %d)" % [opp, s.engine.turn])
 		print("  battle vs %s: winner seat %d on turn %d" % [opp, s.engine.winner, s.engine.turn])
 		s.queue_free()

@@ -151,6 +151,12 @@ func _next_pack() -> void:
 	title.text = "%s%s   (%d of %d)" % [set_info["name"], " · Collector Booster" if collector else "", done, _packs_total]
 	pack = PackVisual.new()
 	pack.set_name_text = set_info["name"]
+	pack.mascot = set_info.get("mascot", "")
+	var pc: Array = set_info.get("pack_colors", ["#e0703c", "#b84a2e"])
+	pack.top_color = Color(pc[0])
+	pack.bottom_color = Color(pc[1])
+	pulls = PackGenerator.open_pack(pack_info["set"], Game.rng, pack_info.get("variant", ""))
+	pack.card_count = pulls.size()
 	pack.collector = collector
 	pack.size = PACK_SIZE
 	pack.position = CENTER - PACK_SIZE / 2 + Vector2(0, 400)
@@ -164,7 +170,6 @@ func _next_pack() -> void:
 		state = State.PACK
 		prompt.text = "Drag across the top of the pack to rip it open  ·  or press Space")
 	completion_before = Game.collection.completion(pack_info["set"])
-	pulls = PackGenerator.open_pack(pack_info["set"], Game.rng, pack_info.get("variant", ""))
 	fresh = []
 
 
@@ -494,6 +499,10 @@ class PackVisual:
 	extends Control
 	const SHADER := preload("res://assets/shaders/foil.gdshader")
 	var set_name_text := ""
+	var mascot := ""
+	var top_color := Color("e0703c")
+	var bottom_color := Color("b84a2e")
+	var card_count := 8
 	var collector := false
 	var tear := 0.0:
 		set(v):
@@ -523,14 +532,14 @@ class PackVisual:
 		var strip := PackTop.new()
 		strip.size = Vector2(size.x, 40)
 		strip.material = material
-		strip.collector = collector
+		strip.color = Color("6e55a0") if collector else top_color
 		return strip
 
 	func _draw() -> void:
 		var w := size.x
 		var h := size.y
-		var top_c := Color("e0703c") if not collector else Color("6e55a0")
-		var bot_c := Color("b84a2e") if not collector else Color("3d2f6b")
+		var top_c := top_color if not collector else Color("6e55a0")
+		var bot_c := bottom_color if not collector else Color("3d2f6b")
 		var y0 := 40.0 if not _top_attached else 0.0
 		# Body gradient in bands (pixel-y)
 		for i in 20:
@@ -558,7 +567,8 @@ class PackVisual:
 				pts2.append(Vector2(6 + i, 38 + (3 if (i / 4) % 2 == 0 else -1)))
 			draw_polyline(pts2, Color("fff3d6"), 2.0)
 		# Art window with the set's mascot
-		var art := CardArt.get_texture(CardDB.get_card("hvb_cinderpaw_dragon"))
+		var mc: CardDef = CardDB.get_card(mascot)
+		var art := CardArt.get_texture(mc if mc else CardDB.get_card(CardDB.set_card_ids(CardDB.set_order[0])[0]))
 		var ar := Rect2(26, 70, w - 52, (w - 52) / 1.5)
 		draw_rect(ar.grow(3), Color("2a211c"))
 		draw_rect(ar.grow(2), UIKit.GOLD)
@@ -568,7 +578,7 @@ class PackVisual:
 		for i in words.size():
 			draw_string(font, Vector2(0, ar.end.y + 34 + i * 26), words[i], HORIZONTAL_ALIGNMENT_CENTER, w, 22, Color("2a211c"))
 			draw_string(font, Vector2(-1, ar.end.y + 32 + i * 26), words[i], HORIZONTAL_ALIGNMENT_CENTER, w, 22, Color("fff3d6"))
-		var sub := "COLLECTOR BOOSTER" if collector else "BOOSTER PACK · 10 CARDS"
+		var sub := "COLLECTOR BOOSTER" if collector else "BOOSTER PACK · %d CARDS" % card_count
 		draw_string(font, Vector2(0, h - 26), sub, HORIZONTAL_ALIGNMENT_CENTER, w, 11, Color("fff3d6"))
 
 	func _crimp(y: float, c: Color) -> void:
@@ -578,9 +588,9 @@ class PackVisual:
 
 	class PackTop:
 		extends Control
-		var collector := false
+		var color := Color("e0703c")
 		func _draw() -> void:
-			var c := Color("e0703c") if not collector else Color("6e55a0")
+			var c := color
 			draw_rect(Rect2(6, 12, size.x - 12, 26), c.lightened(0.1))
 			for x in range(6, int(size.x) - 6, 6):
 				draw_rect(Rect2(x, 0, 3, 14), c.darkened(0.15))

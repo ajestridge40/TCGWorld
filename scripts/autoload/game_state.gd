@@ -8,7 +8,7 @@ signal toast(text: String, kind: String)
 signal day_started(day: int)
 
 const SAVE_PATH := "user://save.json"
-const SAVE_VERSION := 1
+const SAVE_VERSION := 2         # 2 = Sparkfolk rules (no lands, 30-card decks)
 const DAY_START := 6 * 60
 const DAY_END := 26 * 60          # 2am: you fall asleep wherever you are
 const DAYS_PER_SEASON := 28
@@ -117,8 +117,7 @@ func new_game(p_name: String, starter_id: String) -> void:
 		if s["id"] == starter_id:
 			var dk := Deck.from_dict({ "name": s["name"], "cards": s["cards"] })
 			for id in dk.cards:
-				if not CardDB.get_card(id).is_basic():
-					collection.add(id, false, dk.cards[id])
+				collection.add(id, false, dk.cards[id])
 			decks.append(dk)
 	active_deck = 0
 	_roll_daily_singles()
@@ -127,6 +126,14 @@ func new_game(p_name: String, starter_id: String) -> void:
 
 func has_save() -> bool:
 	return FileAccess.file_exists(SAVE_PATH)
+
+
+## True if there's a save from an older, incompatible version of the rules.
+func save_is_outdated() -> bool:
+	if not has_save():
+		return false
+	var parsed = JSON.parse_string(FileAccess.get_file_as_string(SAVE_PATH))
+	return typeof(parsed) != TYPE_DICTIONARY or int(parsed.get("version", 1)) != SAVE_VERSION
 
 
 func save_game() -> void:
@@ -154,6 +161,8 @@ func load_game() -> bool:
 	if typeof(parsed) != TYPE_DICTIONARY:
 		return false
 	var d: Dictionary = parsed
+	if int(d.get("version", 1)) != SAVE_VERSION:
+		return false
 	player_name = d.get("player_name", "Sam")
 	coins = int(d.get("coins", 0))
 	day = int(d.get("day", 0))
@@ -277,6 +286,16 @@ func add_pulls(pulls: Array, from_pack: bool = true) -> Array:
 	return fresh
 
 
+func released_sets() -> Array:
+	return CardDB.released_sets(day)
+
+
+## The most recently released set.
+func newest_set() -> String:
+	var r := released_sets()
+	return r.back() if not r.is_empty() else ""
+
+
 func check_set_completion() -> void:
 	for set_id in CardDB.set_order:
 		var pct := collection.completion(set_id)
@@ -367,6 +386,9 @@ func sleep() -> void:
 	map_id = "home"
 	player_pos = Vector2i(9, 5)
 	_roll_daily_singles()
+	for set_id in CardDB.set_order:
+		if int(CardDB.sets[set_id].get("release_day", 0)) == day:
+			toast.emit("New set out today: %s!" % CardDB.sets[set_id]["name"], "achievement")
 	save_game()
 	day_started.emit(day)
 	time_changed.emit(day, minutes)
@@ -377,7 +399,7 @@ func _roll_daily_singles() -> void:
 	var r := RandomNumberGenerator.new()
 	r.seed = hash("singles%d" % day)
 	var pool: Array = []
-	for set_id in CardDB.set_order:
+	for set_id in released_sets():
 		pool += CardDB.set_card_ids(set_id)
 	var weights := { "common": 0, "uncommon": 30, "rare": 45, "ultra": 20, "secret": 5 }
 	for i in 6:
@@ -388,6 +410,20 @@ func _roll_daily_singles() -> void:
 		var id: String = opts[r.randi_range(0, opts.size() - 1)]
 		var foil := r.randf() < 0.15
 		daily_singles.append({ "id": id, "foil": foil, "price": CardDB.single_price(id, foil) })
+
+
+# ---------------------------------------------------------------- NPC decks
+
+## NPCs update their decks as new sets come out: "set_decks" maps a set id to
+## the deck they switch to once that set is released.
+func npc_deck(npc_id: String) -> Dictionary:
+	var n := CardDB.npc(npc_id)
+	var deck: Dictionary = n.get("deck", {})
+	var upgrades: Dictionary = n.get("set_decks", {})
+	for set_id in released_sets():
+		if upgrades.has(set_id):
+			deck = upgrades[set_id]
+	return deck
 
 
 # ---------------------------------------------------------------- friendship
@@ -442,7 +478,7 @@ func trade_offer(npc_id: String) -> Dictionary:
 		var parts := Collection.split_key(k)
 		var id: String = parts[0]
 		var c: CardDef = CardDB.get_card(id)
-		if c == null or c.is_basic() or id == offered or c.rarity != rar:
+		if c == null or c.is_token or id == offered or c.rarity != rar:
 			continue
 		if collection.count(id) >= 2:
 			spares.append(k)

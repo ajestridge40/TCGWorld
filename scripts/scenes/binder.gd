@@ -15,6 +15,7 @@ var completion_label := UIKit.label("", 16)
 var bar := ProgressBar.new()
 var inspect_layer := Control.new()
 var rarity_box := VBoxContainer.new()
+var set_name_label: Label
 
 
 func _ready() -> void:
@@ -31,7 +32,16 @@ func _ready() -> void:
 	sv.add_theme_constant_override("separation", 6)
 	side.add_child(sv)
 	sv.add_child(UIKit.label("My Binder", 22, UIKit.WOOD))
-	sv.add_child(UIKit.label(CardDB.sets[set_id]["name"], 13, UIKit.INK_SOFT))
+	var set_row := HBoxContainer.new()
+	for sid in CardDB.set_order:
+		var released := CardDB.is_released(sid, Game.day)
+		var sb := UIKit.button(CardDB.sets[sid]["code"] if released else "???", func(): _set_set(sid), 52)
+		sb.disabled = not released
+		sb.tooltip_text = CardDB.sets[sid]["name"] if released else "Not released yet"
+		set_row.add_child(sb)
+	sv.add_child(set_row)
+	set_name_label = UIKit.label("", 13, UIKit.INK_SOFT)
+	sv.add_child(set_name_label)
 	sv.add_child(completion_label)
 	bar.custom_minimum_size = Vector2(170, 14)
 	bar.show_percentage = false
@@ -89,6 +99,12 @@ func _back() -> void:
 	Game.goto(Game.return_scene if Game.return_scene in ["world", "shop"] else "world")
 
 
+func _set_set(sid: String) -> void:
+	set_id = sid
+	page = 0
+	_rebuild()
+
+
 func _set_filter(f: String) -> void:
 	filter = f
 	page = 0
@@ -117,6 +133,7 @@ func _matches(id: String) -> bool:
 
 
 func _rebuild() -> void:
+	set_name_label.text = CardDB.sets[set_id]["name"]
 	ids = CardDB.set_card_ids(set_id).filter(_matches)
 	var total := CardDB.set_card_ids(set_id).size()
 	var owned := Game.collection.owned_unique(set_id)

@@ -1,13 +1,16 @@
 class_name CardView
 extends Control
-## Draws a card at any size. Small sizes show art + stats, large sizes add
-## rules text and flavor. Also used for the battlefield, with overlays for
-## tapped / damage / attacking state driven by the battle scene.
+## Draws a Sparkfolk card at any size. Small sizes show art + stats, large sizes
+## add rules text, keyword reminders and flavor. The battle scene also uses the
+## overlay fields (damage, shield, frozen, highlight) for creatures in lanes.
 
 signal clicked(view: CardView, button: int)
 signal hovered(view: CardView, on: bool)
 
 const FOIL_SHADER := preload("res://assets/shaders/foil.gdshader")
+const SPARK := Color("f2c14e")
+const POWER_COL := Color("d9653b")
+const HEALTH_COL := Color("4f9a4a")
 
 var card: CardDef
 var foil: bool = false
@@ -17,8 +20,10 @@ var highlight: Color = Color(0, 0, 0, 0)
 var dim: bool = false
 var glow: float = 0.0             # rarity glow intensity (pack reveal)
 var power_override: int = -999
-var toughness_override: int = -999
+var health_override: int = -999   # max health incl. buffs
 var damage: int = 0
+var shielded: bool = false
+var frozen: bool = false
 var badge: String = ""            # small corner text, e.g. "x3" or "NEW"
 var badge_color: Color = UIKit.ROSE
 var silhouette: bool = false      # unowned card in the binder
@@ -29,6 +34,7 @@ static func make(c: CardDef, w: float, p_foil: bool = false) -> CardView:
 	var v := CardView.new()
 	v.card = c
 	v.foil = p_foil
+	v.shielded = c.has_keyword("shield") if c else false
 	v.custom_minimum_size = Vector2(w, roundf(w * 1.4))
 	v.size = v.custom_minimum_size
 	return v
@@ -92,9 +98,6 @@ func _draw() -> void:
 	if face_down or card == null:
 		_draw_back(w, h, r)
 		return
-	var frame := UIKit.card_color(card)
-	if card.is_land():
-		frame = frame.lerp(Color("8a7058"), 0.35)
 	if silhouette:
 		_rounded(Rect2(0, 0, w, h), r, Color("cfc3ab"))
 		_rounded(Rect2(3, 3, w - 6, h - 6), r - 2, Color("e4d9c2"))
@@ -102,22 +105,24 @@ func _draw() -> void:
 		draw_string(font, Vector2(0, h * 0.5), "#%d" % card.collector_number, HORIZONTAL_ALIGNMENT_CENTER, w, fs0, Color("a89a80"))
 		draw_string(font, Vector2(4, h * 0.5 + fs0 + 4), card.name, HORIZONTAL_ALIGNMENT_CENTER, w - 8, maxi(7, fs0 - 3), Color("a89a80"))
 		return
+	var frame := UIKit.card_color(card)
 	# Outer border + colored frame
 	_rounded(Rect2(0, 0, w, h), r, Color("2a211c"))
 	var pad := maxf(2.0, w * 0.035)
 	_rounded(Rect2(pad, pad, w - pad * 2, h - pad * 2), r * 0.7, frame)
 	var inner_x := pad * 2.0
 	var inner_w := w - pad * 4.0
-	# Name bar
+	# Name bar, leaving room for the cost gem on the left
 	var name_h := maxf(10.0, w * 0.13)
-	var name_fs := clampi(int(w * 0.075), 7, 17)
-	_rounded(Rect2(inner_x, pad * 2.0, inner_w, name_h), 3, UIKit.PAPER)
-	var pip_space := _draw_cost(Vector2(inner_x + inner_w - 2, pad * 2.0 + name_h * 0.5), name_h * 0.36)
+	var gem_r := name_h * 0.62
+	var name_x := inner_x + gem_r * 1.5
+	_rounded(Rect2(name_x, pad * 2.0, inner_x + inner_w - name_x, name_h), 3, UIKit.PAPER)
 	if w >= 70:
-		var room := inner_w - pip_space - 6
+		var name_fs := clampi(int(w * 0.075), 7, 17)
+		var room := inner_x + inner_w - name_x - 6
 		while name_fs > 7 and font.get_string_size(card.name, HORIZONTAL_ALIGNMENT_LEFT, -1, name_fs).x > room:
 			name_fs -= 1
-		draw_string(font, Vector2(inner_x + 3, pad * 2.0 + name_h * 0.5 + name_fs * 0.36), card.name,
+		draw_string(font, Vector2(name_x + 4, pad * 2.0 + name_h * 0.5 + name_fs * 0.36), card.name,
 				HORIZONTAL_ALIGNMENT_LEFT, room, name_fs, UIKit.INK)
 	# Art
 	var art_y := pad * 2.0 + name_h + pad
@@ -125,7 +130,8 @@ func _draw() -> void:
 	var art_rect := Rect2(inner_x, art_y, inner_w, art_h)
 	draw_rect(art_rect.grow(1), Color("2a211c"))
 	draw_texture_rect(CardArt.get_texture(card), art_rect, false, Color(0.55, 0.55, 0.55) if dim else Color.WHITE)
-	# Type line
+	# Cost gem drawn over the name bar corner
+	_spark_gem(Vector2(inner_x + gem_r * 0.6, pad * 2.0 + name_h * 0.5), gem_r, str(card.cost))
 	var type_y := art_y + art_h + pad
 	var type_h := maxf(8.0, w * 0.1)
 	var small_fs := clampi(int(w * 0.06), 7, 14)
@@ -134,53 +140,59 @@ func _draw() -> void:
 		draw_string(font, Vector2(inner_x + 3, type_y + type_h * 0.5 + small_fs * 0.36), card.type_line(),
 				HORIZONTAL_ALIGNMENT_LEFT, inner_w - 16, small_fs, UIKit.INK)
 		_rarity_gem(Vector2(inner_x + inner_w - 7, type_y + type_h * 0.5), type_h * 0.3)
-		# Rules text box
 		var box_y := type_y + type_h + pad
 		var box_h := h - box_y - pad * 2.0
 		_rounded(Rect2(inner_x, box_y, inner_w, box_h), 3, Color("fbf4e2"))
-		var txt := card.text
 		var text_fs := clampi(int(w * 0.058), 8, 14)
-		draw_multiline_string(font, Vector2(inner_x + 4, box_y + text_fs + 2), txt, HORIZONTAL_ALIGNMENT_LEFT,
-				inner_w - 8, text_fs, 6, UIKit.INK)
-		if card.flavor != "" and w >= 180:
-			var lines := txt.count("\n") + 1 + int(txt.length() * text_fs * 0.55 / (inner_w - 8))
-			var fy := box_y + text_fs + 2 + lines * (text_fs + 2) + 4
-			if fy < box_y + box_h - text_fs:
-				draw_multiline_string(font, Vector2(inner_x + 4, fy), card.flavor, HORIZONTAL_ALIGNMENT_LEFT,
-						inner_w - 8, text_fs - 1, int((box_y + box_h - fy) / (text_fs + 1)), UIKit.INK_SOFT)
+		var line_h := text_fs + 2
+		var max_lines := int((box_h - 4) / line_h)
+		var y := box_y + text_fs + 2
+		var used := _text_block(font, card.text, Vector2(inner_x + 4, y), inner_w - 8, text_fs, max_lines, UIKit.INK)
+		y += used * line_h
+		if w >= 180:
+			var rem := card.reminder_text()
+			if rem != "" and used < max_lines:
+				used += _text_block(font, rem, Vector2(inner_x + 4, y + 2), inner_w - 8, text_fs - 2, max_lines - used, UIKit.INK_SOFT)
+				y += _lines_for(font, rem, inner_w - 8, text_fs - 2) * (text_fs) + 2
+			if card.flavor != "" and y + text_fs < box_y + box_h - 2:
+				var left := int((box_y + box_h - y - 2) / (text_fs + 1))
+				if left > 0:
+					draw_multiline_string(font, Vector2(inner_x + 4, y + 4), card.flavor, HORIZONTAL_ALIGNMENT_LEFT,
+							inner_w - 8, text_fs - 1, left, Color(UIKit.INK_SOFT, 0.8))
 	else:
-		# Compact: keyword initials under the art
 		var kws: PackedStringArray = []
 		for k in card.keywords:
-			kws.append(CardDef.KEYWORD_NAMES.get(k, k).substr(0, 1))
-		if not card.effects.is_empty():
+			kws.append(CardDef.KEYWORD_NAMES.get(k, k).substr(0, 2))
+		if not card.effects.is_empty() and card.is_creature():
 			kws.append("*")
 		if not kws.is_empty():
 			draw_string(font, Vector2(inner_x + 1, type_y + small_fs), " ".join(kws), HORIZONTAL_ALIGNMENT_LEFT, inner_w, small_fs, Color("fffaf0"))
-		if card.is_land():
-			draw_string(font, Vector2(inner_x, h - pad * 3), CardDef.COLOR_NAMES.get(card.produces, ""), HORIZONTAL_ALIGNMENT_CENTER, inner_w, small_fs, Color("fffaf0"))
-		elif not card.is_creature():
-			draw_string(font, Vector2(inner_x, h - pad * 3), "Instant" if card.is_instant() else "Sorcery", HORIZONTAL_ALIGNMENT_CENTER, inner_w, small_fs, Color("fffaf0"))
-	# Power / toughness
+		if card.is_spell():
+			draw_string(font, Vector2(inner_x, h - pad * 3), "Spell", HORIZONTAL_ALIGNMENT_CENTER, inner_w, small_fs, Color("fffaf0"))
+	# Power (left) and health (right)
 	if card.is_creature():
 		var pw := card.power if power_override == -999 else power_override
-		var tg := card.toughness if toughness_override == -999 else toughness_override
-		var pt_fs := clampi(int(w * 0.11), 9, 20)
-		var bw := pt_fs * 2.6
-		var bh := pt_fs * 1.35
-		var bx := w - pad - bw
-		var by := h - pad - bh
-		_rounded(Rect2(bx, by, bw, bh), 3, Color("2a211c"))
-		_rounded(Rect2(bx + 1.5, by + 1.5, bw - 3, bh - 3), 2, UIKit.PAPER)
-		var pt_col := UIKit.INK
-		if pw > card.power or tg > card.toughness:
-			pt_col = Color("2e7d32")
-		elif pw < card.power or tg - damage < card.toughness:
-			pt_col = Color("c0392b")
-		draw_string(font, Vector2(bx, by + bh * 0.5 + pt_fs * 0.36), "%d/%d" % [pw, tg - damage],
-				HORIZONTAL_ALIGNMENT_CENTER, bw, pt_fs, pt_col)
-	if w < 110 and not card.is_land():
-		_rarity_gem(Vector2(pad * 3.5, h - pad * 3.5), maxf(2.0, w * 0.035))
+		var mh := card.health if health_override == -999 else health_override
+		var hp := mh - damage
+		var br := clampf(w * 0.11, 6.0, 20.0)
+		var fs := clampi(int(br * 1.15), 8, 22)
+		var pc := Vector2(pad + br * 0.9, h - pad - br * 0.9)
+		var hc := Vector2(w - pad - br * 0.9, h - pad - br * 0.9)
+		draw_circle(pc, br + 1.5, Color("2a211c"))
+		draw_circle(pc, br, POWER_COL)
+		draw_string(font, Vector2(pc.x - br, pc.y + fs * 0.36), str(pw), HORIZONTAL_ALIGNMENT_CENTER, br * 2, fs,
+				Color("fff3b0") if pw > card.power else Color.WHITE)
+		if shielded:
+			draw_circle(hc, br + 5.0, Color("9fe4ff", 0.85))
+		draw_circle(hc, br + 1.5, Color("2a211c"))
+		draw_circle(hc, br, HEALTH_COL if damage == 0 else Color("c0392b"))
+		draw_string(font, Vector2(hc.x - br, hc.y + fs * 0.36), str(hp), HORIZONTAL_ALIGNMENT_CENTER, br * 2, fs,
+				Color("fff3b0") if mh > card.health and damage == 0 else Color.WHITE)
+	if w < 110:
+		_rarity_gem(Vector2(w * 0.5, h - pad * 3.0), maxf(2.0, w * 0.035))
+	if frozen:
+		_rounded(Rect2(0, 0, w, h), r, Color(0.6, 0.85, 1.0, 0.45))
+		draw_string(font, Vector2(0, h * 0.42), "❄", HORIZONTAL_ALIGNMENT_CENTER, w, int(w * 0.3), Color.WHITE)
 	if dim:
 		_rounded(Rect2(0, 0, w, h), r, Color(0.1, 0.08, 0.12, 0.35))
 	if badge != "":
@@ -188,6 +200,25 @@ func _draw() -> void:
 		var bw2 := font.get_string_size(badge, HORIZONTAL_ALIGNMENT_LEFT, -1, bfs).x + 8
 		_rounded(Rect2(w - bw2 + 4, -6, bw2, bfs + 6), 4, badge_color)
 		draw_string(font, Vector2(w - bw2 + 8, bfs - 3), badge, HORIZONTAL_ALIGNMENT_LEFT, -1, bfs, Color.WHITE)
+
+
+func _text_block(font: Font, txt: String, at: Vector2, width: float, fs: int, max_lines: int, col: Color) -> int:
+	if max_lines <= 0 or txt == "":
+		return 0
+	draw_multiline_string(font, at, txt, HORIZONTAL_ALIGNMENT_LEFT, width, fs, max_lines, col)
+	return mini(max_lines, _lines_for(font, txt, width, fs))
+
+
+func _lines_for(font: Font, txt: String, width: float, fs: int) -> int:
+	return int(font.get_multiline_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, width, fs).y / font.get_height(fs) + 0.5)
+
+
+func _spark_gem(c: Vector2, rad: float, txt: String) -> void:
+	draw_circle(c, rad + 1.5, Color("2a211c"))
+	draw_circle(c, rad, SPARK)
+	draw_circle(c + Vector2(-rad * 0.3, -rad * 0.3), rad * 0.35, Color(1, 1, 1, 0.45))
+	var fs := maxi(7, int(rad * 1.3))
+	draw_string(get_theme_default_font(), Vector2(c.x - rad, c.y + fs * 0.36), txt, HORIZONTAL_ALIGNMENT_CENTER, rad * 2, fs, UIKit.INK)
 
 
 func _draw_back(w: float, h: float, r: float) -> void:
@@ -210,31 +241,6 @@ func _rounded(rect: Rect2, radius: float, color: Color) -> void:
 	sb.set_corner_radius_all(int(radius))
 	sb.anti_aliasing = false
 	draw_style_box(sb, rect)
-
-
-## Draws mana pips right-to-left ending at `right`. Returns the width used.
-func _draw_cost(right: Vector2, rad: float) -> float:
-	if card.is_land():
-		return 0.0
-	var pips: Array = []
-	if card.cost_generic > 0 or card.cost_colors.is_empty():
-		pips.append(["n", card.cost_generic])
-	for col in CardDef.COLORS:
-		for i in int(card.cost_colors.get(col, 0)):
-			pips.append([col, 0])
-	var x := right.x - rad
-	var font := get_theme_default_font()
-	var fs := maxi(6, int(rad * 1.6))
-	for i in range(pips.size() - 1, -1, -1):
-		var p: Array = pips[i]
-		if p[0] == "n":
-			draw_circle(Vector2(x, right.y), rad, Color("cfc6b8"))
-			draw_string(font, Vector2(x - rad, right.y + fs * 0.36), str(p[1]), HORIZONTAL_ALIGNMENT_CENTER, rad * 2, fs, UIKit.INK)
-		else:
-			draw_circle(Vector2(x, right.y), rad, UIKit.CARD_COLORS[p[0]])
-			draw_circle(Vector2(x - rad * 0.3, right.y - rad * 0.3), rad * 0.3, Color(1, 1, 1, 0.5))
-		x -= rad * 2.0 + 1.0
-	return right.x - x - rad
 
 
 func _rarity_gem(center: Vector2, rad: float) -> void:

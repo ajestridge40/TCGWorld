@@ -1,36 +1,41 @@
 class_name CardDef
 extends RefCounted
-## Immutable definition of a card, loaded from set JSON. One instance per card id.
+## Immutable definition of a Sparkfolk card, loaded from set JSON.
+## One instance per card id. See docs/GAME_RULES.md for the rules themselves.
 
 const COLORS := ["ember", "tide", "grove", "sun", "moon"]
-const COLOR_LETTERS := { "E": "ember", "T": "tide", "G": "grove", "S": "sun", "M": "moon" }
-const COLOR_NAMES := { "ember": "Ember", "tide": "Tide", "grove": "Grove", "sun": "Sun", "moon": "Moon" }
+const COLOR_NAMES := { "ember": "Ember", "tide": "Tide", "grove": "Grove", "sun": "Sun", "moon": "Moon", "colorless": "Colorless" }
 const RARITIES := ["common", "uncommon", "rare", "ultra", "secret"]
-const RARITY_NAMES := { "common": "Common", "uncommon": "Uncommon", "rare": "Rare", "ultra": "Ultra Rare", "secret": "Secret Rare", "basic": "Basic" }
+const RARITY_NAMES := { "common": "Common", "uncommon": "Uncommon", "rare": "Rare", "ultra": "Ultra Rare", "secret": "Secret Rare", "token": "Token" }
 const KEYWORD_NAMES := {
-	"flying": "Flying", "reach": "Reach", "haste": "Haste", "lifelink": "Lifelink",
-	"deathtouch": "Deathtouch", "trample": "Trample", "vigilance": "Vigilance",
-	"defender": "Defender", "first_strike": "First Strike",
+	"swift": "Swift", "soar": "Soar", "shield": "Shield",
+	"reach": "Reach", "sweep": "Sweep", "move": "Move",
 }
+const KEYWORD_REMINDERS := {
+	"swift": "Can attack the turn it's played.",
+	"soar": "Flies over the creature across, unless it has Soar or Reach.",
+	"shield": "Ignores the first damage it would take.",
+	"reach": "Can fight creatures with Soar.",
+	"sweep": "When attacking, also hits enemies in the neighboring lanes.",
+	"move": "Once per turn, may step into a neighboring empty lane.",
+}
+const TRIGGER_NAMES := { "enter": "Enter", "dies": "Last Breath", "attack": "Strike" }
+const TARGETED := ["any", "creature", "enemy_creature", "own_creature"]
 
 var id: String
 var set_id: String
 var name: String
-var type: String            # "creature", "spell", "land"
+var type: String = "creature"   # "creature" or "spell"
 var subtype: String = ""
-var speed: String = "sorcery"  # spells only: "instant" or "sorcery"
-var cost_generic: int = 0
-var cost_colors: Dictionary = {}  # color -> count
-var cost_string: String = ""
-var colors: Array = []
+var cost: int = 0
+var color: String = "colorless"
 var power: int = 0
-var toughness: int = 0
+var health: int = 0
 var keywords: Array = []
 var effects: Array = []
 var rarity: String = "common"
 var flavor: String = ""
 var text: String = ""
-var produces: String = ""   # lands: color of mana produced
 var collector_number: int = 0
 var is_token: bool = false
 
@@ -42,67 +47,39 @@ static func from_dict(d: Dictionary, p_set_id: String) -> CardDef:
 	c.name = d.get("name", c.id)
 	c.type = d.get("type", "creature")
 	c.subtype = d.get("subtype", "")
-	c.speed = d.get("speed", "sorcery")
+	c.cost = int(d.get("cost", 0))
+	c.color = d.get("color", "colorless")
 	c.power = int(d.get("power", 0))
-	c.toughness = int(d.get("toughness", 0))
+	c.health = int(d.get("health", 0))
 	c.keywords = d.get("keywords", []).duplicate()
 	c.effects = d.get("effects", []).duplicate(true)
 	c.rarity = d.get("rarity", "common")
 	c.flavor = d.get("flavor", "")
-	c.produces = d.get("produces", "")
 	c.is_token = d.get("is_token", false)
-	c.set_cost(d.get("cost", ""))
-	if d.has("colors"):
-		c.colors = d["colors"].duplicate()
 	c.text = d.get("text", "")
 	if c.text == "":
 		c.text = c.generate_text()
 	return c
 
 
-func set_cost(s: String) -> void:
-	cost_string = s
-	cost_generic = 0
-	cost_colors = {}
-	colors = []
-	var digits := ""
-	for ch in s:
-		if ch >= "0" and ch <= "9":
-			digits += ch
-		elif COLOR_LETTERS.has(ch):
-			var col: String = COLOR_LETTERS[ch]
-			cost_colors[col] = cost_colors.get(col, 0) + 1
-			if not colors.has(col):
-				colors.append(col)
-	if digits != "":
-		cost_generic = int(digits)
-
-
-func mana_value() -> int:
-	var total := cost_generic
-	for col in cost_colors:
-		total += cost_colors[col]
-	return total
+## A creature definition for tokens created by effects.
+static func make_token(tk: Dictionary, p_color: String) -> CardDef:
+	var d := tk.duplicate()
+	d["id"] = "token_" + str(tk.get("name", "token")).to_lower().replace(" ", "_")
+	d["type"] = "creature"
+	d["rarity"] = "token"
+	d["is_token"] = true
+	if not d.has("color"):
+		d["color"] = p_color
+	return from_dict(d, "token")
 
 
 func is_creature() -> bool:
 	return type == "creature"
 
 
-func is_land() -> bool:
-	return type == "land"
-
-
 func is_spell() -> bool:
 	return type == "spell"
-
-
-func is_instant() -> bool:
-	return type == "spell" and speed == "instant"
-
-
-func is_basic() -> bool:
-	return rarity == "basic"
 
 
 func has_keyword(k: String) -> bool:
@@ -110,21 +87,11 @@ func has_keyword(k: String) -> bool:
 
 
 func main_color() -> String:
-	if colors.size() == 1:
-		return colors[0]
-	if colors.size() > 1:
-		return "multi"
-	if is_land():
-		return produces
-	return "colorless"
+	return color
 
 
 func type_line() -> String:
-	var t := ""
-	match type:
-		"creature": t = "Creature"
-		"land": t = "Basic Land" if is_basic() else "Land"
-		"spell": t = "Instant" if speed == "instant" else "Sorcery"
+	var t := "Creature" if is_creature() else "Spell"
 	if is_token:
 		t = "Token " + t
 	if subtype != "":
@@ -132,11 +99,11 @@ func type_line() -> String:
 	return t
 
 
-## The one effect (if any) that needs the player to pick a target.
+## The one effect (if any) where the player picks a target. Every chosen-target
+## effect on a card uses that same target.
 func targeted_effect() -> Dictionary:
 	for e in effects:
-		var tgt: String = e.get("target", "")
-		if tgt in ["any", "creature", "enemy_creature", "own_creature"]:
+		if e.get("target", "") in TARGETED:
 			return e
 	return {}
 
@@ -147,8 +114,6 @@ func needs_target() -> bool:
 
 func generate_text() -> String:
 	var lines: PackedStringArray = []
-	if is_land():
-		return "Tap: add one %s mana." % COLOR_NAMES.get(produces, produces)
 	if not keywords.is_empty():
 		var kw: PackedStringArray = []
 		for k in keywords:
@@ -158,83 +123,99 @@ func generate_text() -> String:
 	for e in effects:
 		var trig: String = e.get("on", "cast")
 		var body := describe_effect(e)
-		match trig:
-			"cast":
-				cast_parts.append(body)
-			"etb":
-				lines.append("When this enters, " + body.substr(0, 1).to_lower() + body.substr(1))
-			"attack":
-				lines.append("Whenever this attacks, " + body.substr(0, 1).to_lower() + body.substr(1))
-			"dies":
-				lines.append("When this dies, " + body.substr(0, 1).to_lower() + body.substr(1))
+		if trig == "cast":
+			cast_parts.append(body)
+		else:
+			lines.append("%s: %s" % [TRIGGER_NAMES.get(trig, trig.capitalize()), body])
 	if not cast_parts.is_empty():
 		lines.append(" ".join(cast_parts))
 	return "\n".join(lines)
 
 
+## Reminder text for keywords and triggers, shown on large card views.
+func reminder_text() -> String:
+	var out: PackedStringArray = []
+	for k in keywords:
+		out.append("%s: %s" % [KEYWORD_NAMES[k], KEYWORD_REMINDERS[k]])
+	for e in effects:
+		match e.get("on", ""):
+			"dies": out.append("Last Breath: happens when this dies.")
+			"attack": out.append("Strike: happens each time this attacks.")
+	for e in effects:
+		var kw: String = e.get("keyword", "")
+		if kw != "" and KEYWORD_REMINDERS.has(kw) and not keywords.has(kw):
+			out.append("%s: %s" % [KEYWORD_NAMES[kw], KEYWORD_REMINDERS[kw]])
+	var unique: PackedStringArray = []
+	for s in out:
+		if not unique.has(s):
+			unique.append(s)
+	return "\n".join(unique)
+
+
 static func target_phrase(t: String) -> String:
 	match t:
 		"any": return "any target"
-		"creature": return "target creature"
-		"enemy_creature": return "target enemy creature"
-		"own_creature": return "target creature you control"
+		"creature": return "a creature"
+		"enemy_creature": return "an enemy creature"
+		"own_creature": return "a creature you control"
 		"this": return "this creature"
 		"all_enemy_creatures": return "each enemy creature"
 		"all_creatures": return "each creature"
 		"enemy_player": return "your opponent"
+		"random_enemy_creature": return "a random enemy creature"
 	return t
 
 
 func describe_effect(e: Dictionary) -> String:
 	var tgt: String = e.get("target", "")
 	var amt: int = int(e.get("amount", 0))
+	var p := int(e.get("power", 0))
+	var h := int(e.get("health", 0))
+	var until := "" if e.get("permanent", true) else " this turn"
 	match e.get("op", ""):
 		"damage":
 			return "Deal %d damage to %s." % [amt, target_phrase(tgt)]
 		"heal":
-			return "You gain %d life." % amt
+			return "You gain %d Heart." % amt
 		"draw":
 			return "Draw a card." if amt == 1 else "Draw %d cards." % amt
 		"lose_life":
-			return "You lose %d life." % amt
+			return "You lose %d Heart." % amt
 		"drain":
-			return "Your opponent loses %d life and you gain %d life." % [amt, amt]
-		"discard":
-			return "Your opponent discards a card at random."
-		"bounce":
-			return "Return %s to its owner's hand." % target_phrase(tgt)
-		"tap":
-			return "Tap %s." % target_phrase(tgt)
-		"destroy":
-			var s := "Destroy %s" % target_phrase(tgt)
-			if e.has("min_power"):
-				s += " with power %d or greater" % int(e["min_power"])
-			return s + "."
-		"pump":
-			var p := int(e.get("power", 0))
-			var t := int(e.get("toughness", 0))
-			var who := target_phrase(tgt)
-			who = who.substr(0, 1).to_upper() + who.substr(1)
-			return "%s gets %s/%s until end of turn." % [who, _signed(p), _signed(t)]
+			return "Your opponent loses %d Heart and you gain %d." % [amt, amt]
+		"spark":
+			return "Gain %d Spark this turn." % amt
+		"buff":
+			return "Give %s %s/%s%s." % [target_phrase(tgt), _signed(p), _signed(h), until]
 		"grant":
-			var kw: String = KEYWORD_NAMES.get(e.get("keyword", ""), e.get("keyword", ""))
-			return "It gains %s until end of turn." % kw.to_lower()
+			return "Give %s %s." % [target_phrase(tgt), KEYWORD_NAMES.get(e.get("keyword", ""), "")]
 		"buff_all":
-			var p2 := int(e.get("power", 0))
-			var t2 := int(e.get("toughness", 0))
-			var who2 := "Your other creatures" if e.get("others", false) else "Creatures you control"
-			if e.get("permanent", false):
-				return "Put a +%d/+%d counter on each creature you control." % [p2, t2]
-			return "%s get %s/%s until end of turn." % [who2, _signed(p2), _signed(t2)]
+			var who := "your other creatures" if e.get("others", false) else "your creatures"
+			return "Give %s %s/%s%s." % [who, _signed(p), _signed(h), until]
+		"grant_all":
+			var who2 := "your other creatures" if e.get("others", false) else "your creatures"
+			return "Give %s %s." % [who2, KEYWORD_NAMES.get(e.get("keyword", ""), "")]
 		"token":
 			var tk: Dictionary = e.get("token", {})
 			var cnt := int(e.get("count", 1))
-			var noun := "%d/%d %s" % [int(tk.get("power", 1)), int(tk.get("toughness", 1)), tk.get("name", "Token")]
-			if cnt == 1:
-				return "Create a %s token." % noun
-			return "Create %s %s tokens." % [_number_word(cnt), noun]
-		"ramp":
-			return "Put a basic land of your choice onto the battlefield tapped."
+			var noun := "%d/%d %s" % [int(tk.get("power", 1)), int(tk.get("health", 1)), tk.get("name", "Token")]
+			var kws: Array = tk.get("keywords", [])
+			if not kws.is_empty():
+				noun += " with " + ", ".join(kws.map(func(k): return KEYWORD_NAMES.get(k, k)))
+			return ("Summon a %s." % noun) if cnt == 1 else "Summon %s %ss." % [_number_word(cnt), noun]
+		"destroy":
+			var s := "Destroy %s" % target_phrase(tgt)
+			if e.has("max_power"):
+				s += " with %d or less power" % int(e["max_power"])
+			return s + "."
+		"destroy_all":
+			return "Destroy each creature with %d or less power." % int(e.get("max_power", 0))
+		"bounce":
+			return "Return %s to its owner's hand." % target_phrase(tgt)
+		"freeze":
+			return "Freeze %s. (It can't attack on its next turn.)" % target_phrase(tgt)
+		"push":
+			return "Push %s into a neighboring empty lane." % target_phrase(tgt)
 	return ""
 
 

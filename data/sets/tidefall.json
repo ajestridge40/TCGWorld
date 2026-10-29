@@ -1,0 +1,59 @@
+{
+  "id": "tff",
+  "name": "Tidefall Festival",
+  "code": "TFF",
+  "release_day": 14,
+  "tier": 2,
+  "mascot": "tff_bay_leviathan",
+  "pack_colors": ["#3d8fc4", "#2a4f7a"],
+  "description": "The summer festival comes to the bay. Lanes start to matter: creatures move, sweep and get pushed around, and some have last words.",
+  "new_mechanics": ["Reach", "Sweep", "Move", "Last Breath", "Strike", "Freeze", "Push", "Bounce"],
+  "pack": {
+    "name": "Tidefall Booster",
+    "slots": [
+      { "rarity": "common", "count": 5 },
+      { "rarity": "uncommon", "count": 2 },
+      { "weights": { "rare": 80, "ultra": 16, "secret": 4 }, "count": 1 }
+    ],
+    "foil_chance": 0.25,
+    "foil_weights": { "common": 60, "uncommon": 25, "rare": 10, "ultra": 4, "secret": 1 }
+  },
+  "cards": [
+    { "id": "tff_ember_acrobat", "name": "Ember Acrobat", "color": "ember", "subtype": "Performer", "cost": 2, "power": 2, "health": 2, "keywords": ["move"], "rarity": "common", "flavor": "Never in the same lane twice." },
+    { "id": "tff_firecracker", "name": "Firecracker", "color": "ember", "type": "spell", "cost": 2, "rarity": "common", "effects": [ { "on": "cast", "op": "damage", "amount": 3, "target": "any" } ] },
+    { "id": "tff_bonfire_brawler", "name": "Bonfire Brawler", "color": "ember", "subtype": "Salamander", "cost": 4, "power": 3, "health": 4, "keywords": ["sweep"], "rarity": "uncommon" },
+    { "id": "tff_kiln_imp", "name": "Kiln Imp", "color": "ember", "subtype": "Imp", "cost": 3, "power": 3, "health": 2, "rarity": "uncommon", "effects": [ { "on": "dies", "op": "damage", "amount": 2, "target": "enemy_player" } ], "flavor": "Goes out with a bang. Literally." },
+    { "id": "tff_festival_drake", "name": "Festival Drake", "color": "ember", "subtype": "Drake", "cost": 5, "power": 4, "health": 4, "keywords": ["soar"], "rarity": "rare", "effects": [ { "on": "attack", "op": "damage", "amount": 1, "target": "enemy_player" } ] },
+    { "id": "tff_festival_phoenix", "name": "Phoenix of the Festival", "color": "ember", "subtype": "Phoenix", "cost": 6, "power": 4, "health": 3, "keywords": ["soar", "swift"], "rarity": "ultra", "effects": [ { "on": "dies", "op": "token", "count": 1, "token": { "name": "Ember Chick", "subtype": "Phoenix", "power": 2, "health": 2, "keywords": ["swift"] } } ], "flavor": "The festival ends. The fire doesn't." },
+
+    { "id": "tff_tidepool_crab", "name": "Tidepool Crab", "color": "tide", "subtype": "Crab", "cost": 2, "power": 1, "health": 3, "keywords": ["reach"], "rarity": "common", "flavor": "Snaps at gulls. Occasionally catches one." },
+    { "id": "tff_ripple_away", "name": "Ripple Away", "color": "tide", "type": "spell", "cost": 2, "rarity": "common", "effects": [ { "on": "cast", "op": "bounce", "target": "enemy_creature" } ], "flavor": "The tide giveth, and the tide sends you home early." },
+    { "id": "tff_frost_net", "name": "Frost Net", "color": "tide", "type": "spell", "cost": 1, "rarity": "uncommon", "effects": [ { "on": "cast", "op": "freeze", "target": "enemy_creature" }, { "on": "cast", "op": "draw", "amount": 1 } ] },
+    { "id": "tff_current_rider", "name": "Current Rider", "color": "tide", "subtype": "Otter", "cost": 3, "power": 3, "health": 3, "keywords": ["move"], "rarity": "uncommon", "effects": [ { "on": "enter", "op": "push", "target": "enemy_creature" } ] },
+    { "id": "tff_tidecaller", "name": "Tidecaller", "color": "tide", "subtype": "Keeper", "cost": 4, "power": 3, "health": 5, "rarity": "rare", "effects": [ { "on": "enter", "op": "freeze", "target": "all_enemy_creatures" } ], "flavor": "Rings a little bell, and the whole bay holds its breath." },
+    { "id": "tff_bay_leviathan", "name": "Leviathan of the Bay", "color": "tide", "subtype": "Leviathan", "cost": 8, "power": 6, "health": 7, "keywords": ["sweep", "move"], "rarity": "ultra", "flavor": "The festival boats are very careful where they anchor." },
+
+    { "id": "tff_hedge_hog", "name": "Hedge Hog", "color": "grove", "subtype": "Hedgehog", "cost": 2, "power": 2, "health": 2, "rarity": "common", "effects": [ { "on": "dies", "op": "token", "count": 1, "token": { "name": "Hoglet", "subtype": "Hedgehog", "power": 1, "health": 1 } } ] },
+    { "id": "tff_treetop_lookout", "name": "Treetop Lookout", "color": "grove", "subtype": "Squirrel", "cost": 3, "power": 2, "health": 4, "keywords": ["reach"], "rarity": "common" },
+    { "id": "tff_rootstomp_bear", "name": "Rootstomp Bear", "color": "grove", "subtype": "Bear", "cost": 5, "power": 4, "health": 5, "keywords": ["sweep"], "rarity": "uncommon" },
+    { "id": "tff_overgrow", "name": "Overgrow", "color": "grove", "type": "spell", "cost": 3, "rarity": "uncommon", "effects": [ { "on": "cast", "op": "buff", "power": 3, "health": 3, "target": "own_creature" }, { "on": "cast", "op": "grant", "keyword": "reach", "target": "own_creature" } ] },
+    { "id": "tff_mother_willow", "name": "Mother Willow", "color": "grove", "subtype": "Treefolk", "cost": 5, "power": 3, "health": 5, "keywords": ["reach"], "rarity": "rare", "effects": [ { "on": "dies", "op": "token", "count": 1, "token": { "name": "Sapling", "subtype": "Treefolk", "power": 3, "health": 3 } } ] },
+
+    { "id": "tff_lamplighter_page", "name": "Lamplighter Page", "color": "sun", "subtype": "Villager", "cost": 1, "power": 1, "health": 2, "keywords": ["move"], "rarity": "common" },
+    { "id": "tff_festival_banner", "name": "Festival Banner", "color": "sun", "type": "spell", "cost": 1, "rarity": "common", "effects": [ { "on": "cast", "op": "buff_all", "power": 2, "health": 0, "permanent": false } ], "flavor": "Everyone marches faster under a nice flag." },
+    { "id": "tff_shieldmaiden", "name": "Shieldmaiden", "color": "sun", "subtype": "Knight", "cost": 3, "power": 2, "health": 3, "keywords": ["shield"], "rarity": "uncommon", "flavor": "Her shield has a little painted sun on it. She painted it herself." },
+    { "id": "tff_broom_knight", "name": "Broom Knight", "color": "sun", "subtype": "Knight", "cost": 4, "power": 3, "health": 4, "keywords": ["sweep"], "rarity": "uncommon", "flavor": "Keeps the festival grounds tidy. Aggressively." },
+    { "id": "tff_festival_queen", "name": "Festival Queen Aurelia", "color": "sun", "subtype": "Noble", "cost": 5, "power": 4, "health": 5, "keywords": ["shield"], "rarity": "rare", "effects": [ { "on": "attack", "op": "heal", "amount": 1 } ] },
+
+    { "id": "tff_grave_moth", "name": "Grave Moth", "color": "moon", "subtype": "Moth", "cost": 2, "power": 2, "health": 1, "rarity": "common", "effects": [ { "on": "dies", "op": "drain", "amount": 1 } ] },
+    { "id": "tff_shadow_shove", "name": "Shadow Shove", "color": "moon", "type": "spell", "cost": 1, "rarity": "common", "effects": [ { "on": "cast", "op": "push", "target": "enemy_creature" }, { "on": "cast", "op": "drain", "amount": 1 } ] },
+    { "id": "tff_night_market_ghoul", "name": "Night Market Ghoul", "color": "moon", "subtype": "Ghoul", "cost": 4, "power": 3, "health": 4, "rarity": "uncommon", "effects": [ { "on": "attack", "op": "drain", "amount": 1 } ], "flavor": "Sells you a lantern. Takes your shadow as payment." },
+    { "id": "tff_hollow_owl", "name": "Hollow Owl", "color": "moon", "subtype": "Owl", "cost": 3, "power": 2, "health": 3, "keywords": ["soar", "reach"], "rarity": "uncommon" },
+    { "id": "tff_moonlit_masquerade", "name": "Moonlit Masquerade", "color": "moon", "type": "spell", "cost": 5, "rarity": "rare", "effects": [ { "on": "cast", "op": "destroy_all", "max_power": 3 } ], "flavor": "Everyone takes off their masks at midnight. Some don't put them back on." },
+
+    { "id": "tff_paper_lantern_golem", "name": "Paper Lantern Golem", "subtype": "Golem", "cost": 3, "power": 3, "health": 4, "keywords": ["move"], "rarity": "common" },
+    { "id": "tff_festival_float", "name": "Festival Float", "subtype": "Construct", "cost": 6, "power": 5, "health": 7, "keywords": ["move"], "rarity": "uncommon", "flavor": "It's mostly papier-mache and good intentions." },
+
+    { "id": "tff_lantern_spirit", "name": "Tidefall Lantern Spirit", "subtype": "Spirit", "cost": 5, "power": 3, "health": 4, "keywords": ["soar", "move"], "rarity": "secret", "effects": [ { "on": "enter", "op": "draw", "amount": 1 } ], "flavor": "Released on the last night of the festival. Nobody released this one." }
+  ]
+}

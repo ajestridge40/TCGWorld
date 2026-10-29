@@ -2,8 +2,8 @@
 
 A cozy 2D pixel-art life sim about the local card-shop scene. Move to the small
 town of Maplebrook, rip booster packs at **The Gilded Deck**, fill your binder,
-trade with the townsfolk, and play Magic-style card battles at the kitchen table
-or in the Saturday Showdown.
+trade with the townsfolk, and play **Sparkfolk**, the town's own trading card
+game, at the kitchen table or in the Saturday Showdown.
 
 Built with **Godot 4.3** and GDScript. No external assets yet: card art,
 characters, the town and all audio are generated procedurally at runtime, so
@@ -25,28 +25,37 @@ the project runs straight from a clone.
 | P | Open your sealed packs |
 | Esc | Menu (achievements, music, save & quit) |
 
-In battle: click a card in your hand to play it, **Attack...** to pick attackers,
-click your creature then an attacker to block, right-click or Esc cancels targeting.
+In battle: click a card in your hand, then a lane (creatures) or a target (spells).
+**Attack...** picks attackers; badges preview each fight. Click a creature with Move
+to step it sideways. Right-click or Esc cancels.
+
+## Sparkfolk in 30 seconds
+
+You gain one more Spark every turn (no lands). Decks are 30 cards, two colors.
+Creatures go into one of four lanes and attack straight across: they fight the
+creature opposite, or hit the opponent's Heart if the lane is open. Defending is
+automatic. First to 0 Heart loses. Full rules: [docs/GAME_RULES.md](docs/GAME_RULES.md).
 
 ## What's in the vertical slice
 
-- **Hearthvale Beginnings**: 52 cards across five colors (Ember, Tide, Grove, Sun, Moon) plus colorless, with Common / Uncommon / Rare / Ultra Rare / Secret Rare and foils
+- **Hearthvale Beginnings** (47 cards, simple) and **Tidefall Festival** (30 cards, adds lane tactics; releases on day 15), across five colors plus colorless, Common to Secret Rare, with foils
 - Pack opening with drag-to-rip, rarity anticipation, foil shimmer, glow and sparkles
 - Binder, deck builder, three starter decks
-- A Magic-inspired battle system with an AI that has six personalities
+- Sparkfolk battles against an AI with six personalities, kept fair by a stat-budget model and simulated matchups
 - A walkable town, card shop and home with a clock, NPC schedules and day/night
 - Shop: boosters, bundles, mystery boxes, collector boosters, supplies, daily singles, selling, part-time shifts
 - Friendship hearts, daily trades, Collector Rank, achievements, the Saturday Showdown tournament
 
 ## Docs
 
+- [Sparkfolk rules & balance process](docs/GAME_RULES.md)
 - [Architecture & data formats](docs/ARCHITECTURE.md)
 - [Roadmap](docs/ROADMAP.md)
 
 ## Tests
 
 ```bash
-godot --headless --path . res://tests/test_runner.tscn   # rules / packs / decks / AI / save
+godot --headless --path . res://tests/test_runner.tscn   # rules / balance / packs / decks / AI matchups / save
 godot --headless --path . res://tests/smoke_test.tscn    # loads every scene, plays 2 battles
 ```
 

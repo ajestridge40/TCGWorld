@@ -1,18 +1,15 @@
 extends Control
-## Battle table. Drives BattleEngine for the human (seat 0) and BattleAI (seat 1).
+## Sparkfolk table. Drives BattleEngine for the human (seat 0) and BattleAI (seat 1).
 ## Request comes from Game.battle_request: { opponent, best_of, context }.
-
-signal player_done
 
 const CX := 180.0          # center column x
 const CW := 570.0          # center column width
-const CREATURE_W := 64.0
-const HAND_W := 78.0
-const ROW_OPP_LANDS := 10.0
-const ROW_OPP := 46.0
-const ROW_ME := 252.0
-const ROW_MY_LANDS := 362.0
-const ROW_HAND := 404.0
+const LANE_W := CW / BattleEngine.LANES
+const CARD_W := 88.0
+const HAND_W := 84.0
+const ROW_OPP := 16.0
+const ROW_ME := 206.0
+const ROW_HAND := 392.0
 
 var engine: BattleEngine
 var ai: BattleAI
@@ -23,25 +20,28 @@ var context := "casual"
 var score := [0, 0]
 var game_no := 0
 
-var mode := "idle"          # idle | main | attack | blocks | tricks | target | over
+var mode := "idle"          # idle | play | place | target | move | attack | over
 var busy := false
 var sel_attackers: Array = []
-var block_assign: Dictionary = {}   # attacker uid -> blocker uid
-var sel_blocker := -1
 var pending: BattleEngine.CardInstance
+var pending_lane := -1
 var pending_targets: Array = []
-var _prev_mode := ""
+var move_uid := -1
+var _last_ok := false
 
 var board := Control.new()
-var arrows: ArrowLayer
-var views: Dictionary = {}          # uid -> CardView (battlefield + hand)
-var last_rects: Dictionary = {}     # uid -> Rect2 (for effects after a card leaves)
+var lane_slots: Array = []          # [player][lane] -> Panel
+var views: Dictionary = {}          # uid -> CardView
+var last_rects: Dictionary = {}     # uid -> Rect2
+var _queue: Array = []              # engine events waiting to be animated
 var opp_panel: PanelContainer
 var me_panel: PanelContainer
-var opp_life := UIKit.label("20", 34, UIKit.INK, HORIZONTAL_ALIGNMENT_CENTER)
-var me_life := UIKit.label("20", 34, UIKit.INK, HORIZONTAL_ALIGNMENT_CENTER)
+var opp_life := UIKit.label("20", 30, UIKit.INK, HORIZONTAL_ALIGNMENT_CENTER)
+var me_life := UIKit.label("20", 30, UIKit.INK, HORIZONTAL_ALIGNMENT_CENTER)
 var opp_info := UIKit.label("", 12, UIKit.INK_SOFT)
 var me_info := UIKit.label("", 12, UIKit.INK_SOFT)
+var opp_sparks: SparkMeter
+var me_sparks: SparkMeter
 var turn_label := UIKit.label("", 16, UIKit.WOOD, HORIZONTAL_ALIGNMENT_CENTER)
 var phase_label := UIKit.label("", 13, UIKit.INK, HORIZONTAL_ALIGNMENT_CENTER)
 var btn_main: Button
@@ -87,39 +87,50 @@ func _build_ui() -> void:
 		stars.position = mat.position
 		stars.size = mat.size
 		add_child(stars)
-	var mid := ColorRect.new()
-	mid.color = Color(1, 1, 1, 0.08)
-	mid.position = Vector2(CX, 203)
-	mid.size = Vector2(CW, 2)
-	mid.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(mid)
+	# Lane strips + clickable slots.
+	for pl in 2:
+		var row: Array = []
+		for l in BattleEngine.LANES:
+			var slot := Panel.new()
+			slot.position = Vector2(CX + l * LANE_W + 6, (ROW_OPP if pl == 1 else ROW_ME) - 6)
+			slot.size = Vector2(LANE_W - 12, CARD_W * 1.4 + 12)
+			slot.mouse_filter = Control.MOUSE_FILTER_STOP
+			var lane := l
+			var who := pl
+			slot.gui_input.connect(func(ev): _on_slot_input(ev, who, lane))
+			add_child(slot)
+			row.append(slot)
+		lane_slots.append(row)
+	for l in BattleEngine.LANES:
+		var n := UIKit.label("%d" % (l + 1), 12, Color(1, 1, 1, 0.35), HORIZONTAL_ALIGNMENT_CENTER)
+		n.position = Vector2(CX + l * LANE_W, 158 + 22)
+		n.size = Vector2(LANE_W, 16)
+		add_child(n)
 	board.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	board.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(board)
-	arrows = ArrowLayer.new()
-	arrows.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	arrows.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(arrows)
 
-	opp_panel = _player_panel(npc.get("name", "?"), npc.get("deck_name", ""), npc.get("look", {}), opp_life, opp_info)
+	opp_sparks = SparkMeter.new()
+	me_sparks = SparkMeter.new()
+	opp_panel = _player_panel(npc.get("name", "?"), npc.get("deck_name", ""), npc.get("look", {}), opp_life, opp_info, opp_sparks)
 	opp_panel.position = Vector2(6, 6)
 	add_child(opp_panel)
-	me_panel = _player_panel(Game.player_name, Game.current_deck().name, CharacterSprite.PLAYER_LOOK, me_life, me_info)
-	me_panel.position = Vector2(6, 384)
+	me_panel = _player_panel(Game.player_name, Game.current_deck().name, CharacterSprite.PLAYER_LOOK, me_life, me_info, me_sparks)
+	me_panel.position = Vector2(6, 372)
 	add_child(me_panel)
 	opp_panel.gui_input.connect(func(ev): _on_player_clicked(ev, 1))
 	me_panel.gui_input.connect(func(ev): _on_player_clicked(ev, 0))
 
 	var phase_p := UIKit.panel()
-	phase_p.position = Vector2(6, 166)
-	phase_p.custom_minimum_size = Vector2(164, 208)
+	phase_p.position = Vector2(6, 170)
+	phase_p.custom_minimum_size = Vector2(164, 194)
 	add_child(phase_p)
 	var pv := VBoxContainer.new()
 	pv.add_theme_constant_override("separation", 6)
 	phase_p.add_child(pv)
 	pv.add_child(turn_label)
 	phase_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	phase_label.custom_minimum_size = Vector2(144, 70)
+	phase_label.custom_minimum_size = Vector2(144, 62)
 	pv.add_child(phase_label)
 	btn_main = UIKit.button("", _on_main_button)
 	pv.add_child(btn_main)
@@ -142,7 +153,7 @@ func _build_ui() -> void:
 	log_box.add_theme_color_override("default_color", UIKit.INK)
 	lp.add_child(log_box)
 
-	banner.position = Vector2(CX, 186)
+	banner.position = Vector2(CX, 172)
 	banner.size = Vector2(CW, 36)
 	banner.add_theme_color_override("font_outline_color", Color("2a211c"))
 	banner.add_theme_constant_override("outline_size", 8)
@@ -154,9 +165,9 @@ func _build_ui() -> void:
 	add_child(ToastLayer.new())
 
 
-func _player_panel(pname: String, sub: String, look: Dictionary, life_l: Label, info_l: Label) -> PanelContainer:
+func _player_panel(pname: String, sub: String, look: Dictionary, life_l: Label, info_l: Label, meter: SparkMeter) -> PanelContainer:
 	var p := UIKit.panel()
-	p.custom_minimum_size = Vector2(164, 150)
+	p.custom_minimum_size = Vector2(164, 158)
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 0)
 	v.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -167,7 +178,7 @@ func _player_panel(pname: String, sub: String, look: Dictionary, life_l: Label, 
 	var face := TextureRect.new()
 	face.texture = CharacterSprite.texture(look, 0, 0)
 	face.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	face.custom_minimum_size = Vector2(48, 48)
+	face.custom_minimum_size = Vector2(44, 44)
 	face.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	face.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	h.add_child(face)
@@ -179,7 +190,14 @@ func _player_panel(pname: String, sub: String, look: Dictionary, life_l: Label, 
 	s.clip_text = true
 	s.custom_minimum_size.x = 96
 	nv.add_child(s)
-	v.add_child(life_l)
+	var lh := HBoxContainer.new()
+	lh.alignment = BoxContainer.ALIGNMENT_CENTER
+	lh.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	lh.add_child(UIKit.label("♥", 22, UIKit.ROSE))
+	lh.add_child(life_l)
+	v.add_child(lh)
+	meter.custom_minimum_size = Vector2(144, 18)
+	v.add_child(meter)
 	v.add_child(info_l)
 	return p
 
@@ -194,14 +212,16 @@ func _new_game() -> void:
 	game_no += 1
 	engine = BattleEngine.new()
 	engine.event.connect(_on_event)
-	engine.setup(Game.current_deck().to_list(), _deck_list(npc["deck"]), Game.player_name, npc["name"])
+	engine.setup(Game.current_deck().to_list(), _deck_list(Game.npc_deck(npc_id)), Game.player_name, npc["name"])
 	log_box.clear()
 	views.clear()
 	for c in board.get_children():
 		c.queue_free()
-	engine.start()
+	busy = true
+	await _act(engine.start)
 	var who := "You go" if engine.active == 0 else "%s goes" % npc["name"]
 	await _show_banner(("Game %d · " % game_no if best_of > 1 else "") + who + " first", 1.0)
+	busy = false
 	_turn_flow()
 
 
@@ -211,99 +231,65 @@ func _turn_flow() -> void:
 		return
 	_refresh()
 	if engine.active == 0:
-		await _show_banner("Your turn", 0.6)
-		_set_mode("main")
+		await _show_banner("Your turn", 0.5)
+		_set_mode("play")
 	else:
 		await _ai_turn()
 
 
 func _set_mode(m: String) -> void:
 	mode = m
-	if m != "target":
+	if m != "target" and m != "place":
 		pending = null
+		pending_lane = -1
 		pending_targets = []
+	if m != "move":
+		move_uid = -1
+	_refresh()
+
+
+## Run an engine action, then animate whatever it emitted.
+func _act(f: Callable) -> void:
+	_queue.clear()
+	f.call()
+	await _play_queue()
 	_refresh()
 
 
 func _ai_turn() -> void:
 	busy = true
 	_set_mode("idle")
-	await _show_banner("%s's turn" % npc["name"], 0.6)
-	await _ai_main_phase()
-	if engine.is_over():
-		busy = false
-		_game_over()
-		return
-	var atk: Array = ai.choose_attackers(engine, 1)
-	engine.declare_attackers(atk)
-	_refresh()
-	if engine.phase == BattleEngine.Phase.BLOCKS:
-		Sfx.play("thump", 0.8)
-		await _wait(0.5)
-		busy = false
-		block_assign = {}
-		sel_blocker = -1
-		_set_mode("blocks")
-		await player_done
-		busy = true
-		engine.declare_blocks(block_assign)
-		block_assign = {}
-		_refresh()
-		await _combat_tricks()
-	if engine.is_over():
-		busy = false
-		_game_over()
-		return
-	await _ai_main_phase()
+	await _show_banner("%s's turn" % npc["name"], 0.5)
+	await _ai_actions()
+	if not engine.is_over():
+		var atk: Array = ai.choose_attackers(engine, 1)
+		if not atk.is_empty():
+			await _wait(0.3)
+			await _act(func(): engine.attack(atk))
+	if not engine.is_over():
+		await _ai_actions()
 	if engine.is_over():
 		busy = false
 		_game_over()
 		return
 	await _wait(0.3)
-	engine.end_turn()
+	await _act(engine.end_turn)
 	busy = false
 	_turn_flow()
 
 
-func _ai_main_phase() -> void:
-	while not engine.is_over():
-		var act: Dictionary = ai.next_main_action(engine, 1)
+func _ai_actions() -> void:
+	var guard := 0
+	while not engine.is_over() and guard < 30:
+		guard += 1
+		var act: Dictionary = ai.next_action(engine, 1)
 		if act.is_empty():
 			break
-		await _wait(0.55)
-		engine.cast(1, act["card"], act["target"])
-		_refresh()
-	await _wait(0.3)
-
-
-## Trick window: attacker acts first, then defender. Handles both seats.
-func _combat_tricks() -> void:
-	while engine.phase == BattleEngine.Phase.TRICKS and not engine.is_over():
-		if engine.trick_player == 1:
-			var tr: Dictionary = ai.next_trick(engine, 1)
-			if tr.is_empty():
-				engine.pass_tricks()
-			else:
-				await _wait(0.5)
-				engine.cast(1, tr["card"], tr["target"])
-				_refresh()
-				await _wait(0.4)
+		await _wait(0.5)
+		if act["kind"] == "move":
+			await _act(func(): engine.move(1, act["uid"], act["lane"]))
 		else:
-			if _has_playable_instant():
-				busy = false
-				_set_mode("tricks")
-				await player_done
-				busy = true
-			engine.pass_tricks()
-		_refresh()
-	await _wait(0.35)
-
-
-func _has_playable_instant() -> bool:
-	for c in engine.me(0).hand:
-		if c.def.is_instant() and engine.can_pay(0, c.def):
-			return true
-	return false
+			await _act(func(): engine.play(1, act["card"], act["lane"], act["target"]))
 
 
 # ================================================================ player actions
@@ -312,116 +298,126 @@ func _on_main_button() -> void:
 	if busy:
 		return
 	match mode:
-		"main":
-			if engine.combat_done:
+		"play":
+			if _attack_candidates().is_empty():
 				_end_my_turn()
 			else:
-				var able: Array = engine.me(0).battlefield.filter(func(c): return c.can_attack())
-				if able.is_empty():
-					_end_my_turn()
-				else:
-					sel_attackers = []
-					_set_mode("attack")
+				sel_attackers = _attack_candidates().filter(func(c): return _forecast(c) != "dies").map(func(c): return c.uid)
+				_set_mode("attack")
 		"attack":
 			_confirm_attack()
-		"blocks":
-			player_done.emit()
-		"tricks":
-			player_done.emit()
-		"target":
-			_set_mode(_prev_mode)
+		"place", "target", "move":
+			_set_mode("play")
 
 
 func _on_alt_button() -> void:
 	if busy:
 		return
 	match mode:
-		"main":
+		"play":
 			_end_my_turn()
 		"attack":
 			sel_attackers = []
-			_set_mode("main")
-		"blocks":
-			block_assign = {}
-			sel_blocker = -1
-			_refresh()
+			_set_mode("play")
+
+
+func _attack_candidates() -> Array:
+	return engine.me(0).creatures().filter(func(c): return engine.can_attack(c))
 
 
 func _end_my_turn() -> void:
-	if engine.active != 0 or engine.phase != BattleEngine.Phase.MAIN:
+	if not engine.is_my_turn(0):
 		return
 	busy = true
 	_set_mode("idle")
-	engine.end_turn()
+	await _act(engine.end_turn)
 	busy = false
 	_turn_flow()
 
 
 func _confirm_attack() -> void:
 	busy = true
-	engine.declare_attackers(sel_attackers)
+	var list := sel_attackers.duplicate()
 	sel_attackers = []
 	_set_mode("idle")
-	if engine.phase == BattleEngine.Phase.BLOCKS:
-		Sfx.play("thump", 0.8)
-		await _wait(0.6)
-		engine.declare_blocks(ai.choose_blocks(engine, 1))
-		_refresh()
-		await _wait(0.5)
-		await _combat_tricks()
+	await _act(func(): engine.attack(list))
 	busy = false
 	if engine.is_over():
 		_game_over()
 	else:
-		_set_mode("main")
+		_set_mode("play")
 
 
 func _on_card_clicked(view: CardView, button: int) -> void:
 	if busy or mode in ["idle", "over"]:
 		return
 	if button == MOUSE_BUTTON_RIGHT:
-		if mode == "target":
-			_set_mode(_prev_mode)
+		if mode in ["place", "target", "move"]:
+			_set_mode("play")
 		return
 	var uid := view.instance_uid
-	var hand_card = _hand_card(uid)
 	if mode == "target":
 		_try_target({ "kind": "creature", "uid": uid })
 		return
+	var hand_card = _hand_card(uid)
 	if hand_card:
-		_try_cast(hand_card)
+		if mode in ["play", "place", "move"]:
+			_try_play(hand_card)
 		return
 	var c := engine.find(uid)
 	if c == null:
 		return
+	if mode == "place" and c.owner == 0:
+		choose_lane(c.lane)
+		return
 	match mode:
 		"attack":
-			if c.owner == 0 and c.can_attack():
+			if c.owner == 0 and engine.can_attack(c):
 				if sel_attackers.has(uid):
 					sel_attackers.erase(uid)
 				else:
 					sel_attackers.append(uid)
 				Sfx.play("click")
 				_refresh()
-		"blocks":
-			if c.owner == 0 and not c.tapped:
-				for a in block_assign.keys():
-					if block_assign[a] == uid:
-						block_assign.erase(a)
-				sel_blocker = uid if sel_blocker != uid else -1
-				Sfx.play("click")
-				_refresh()
-			elif c.owner == 1 and engine.attackers.has(uid) and sel_blocker != -1:
-				if engine.can_block(sel_blocker, uid):
-					for a in block_assign.keys():
-						if block_assign[a] == sel_blocker:
-							block_assign.erase(a)
-					block_assign[uid] = sel_blocker
-					sel_blocker = -1
-					Sfx.play("play")
-				else:
-					_nope("That creature can't block this attacker (flying?).")
-				_refresh()
+		"play", "move":
+			if c.owner == 0 and not engine.move_options(0, uid).is_empty():
+				move_uid = uid
+				_set_mode("move")
+			elif c.owner == 0 and c.has_kw("move"):
+				_nope("It has already moved, or there's no empty lane next to it.")
+
+
+func _on_slot_input(ev: InputEvent, who: int, lane: int) -> void:
+	if not (ev is InputEventMouseButton and ev.pressed):
+		return
+	if ev.button_index == MOUSE_BUTTON_RIGHT:
+		if mode in ["place", "target", "move"]:
+			_set_mode("play")
+		return
+	if busy or who != 0:
+		return
+	choose_lane(lane)
+
+
+## Player picked one of their lanes (to place a creature or move one).
+func choose_lane(lane: int) -> void:
+	if mode == "place":
+		pending_lane = lane
+		var te: Dictionary = pending.def.targeted_effect()
+		var legal := engine.legal_targets(0, te) if not te.is_empty() else []
+		if legal.is_empty():
+			_do_play(pending, lane, {})
+		else:
+			pending_targets = legal
+			mode = "target"
+			_refresh()
+	elif mode == "move" and engine.move_options(0, move_uid).has(lane):
+		var uid := move_uid
+		busy = true
+		await _act(func(): engine.move(0, uid, lane))
+		Sfx.play("play", 1.3)
+		busy = false
+		_set_mode("play")
 
 
 func _hand_card(uid: int):
@@ -431,59 +427,49 @@ func _hand_card(uid: int):
 	return null
 
 
-func _try_cast(c) -> void:
-	if c.def.is_land():
-		if engine.play_land(0, c):
-			Sfx.play("play", 0.8)
-			_refresh()
+func _try_play(c) -> void:
+	if not engine.can_play(0, c):
+		if c.def.cost > engine.me(0).sparks:
+			_nope("Not enough Sparks.")
 		else:
-			_nope("You've already played a land this turn." if engine.active == 0 else "Lands can only be played on your turn.")
+			_nope("Nothing to target right now.")
 		return
-	if not engine.can_cast(0, c):
-		if not engine.can_pay(0, c.def):
-			_nope("Not enough mana.")
-		elif mode == "tricks" and not c.def.is_instant():
-			_nope("Only instants during combat.")
-		elif engine.active != 0:
-			_nope("Wait for your turn (or a combat trick window).")
-		else:
-			_nope("No legal targets.")
+	pending = c
+	if c.def.is_creature():
+		mode = "place"
+		_refresh()
 		return
 	var te: Dictionary = c.def.targeted_effect()
-	if te.is_empty():
-		_do_cast(c, {})
-		return
-	var legal := engine.legal_targets(0, te)
+	var legal := engine.legal_targets(0, te) if not te.is_empty() else []
 	if legal.is_empty():
-		_do_cast(c, {})
-		return
-	_prev_mode = mode
-	pending = c
-	pending_targets = legal
-	mode = "target"
-	_refresh()
+		_do_play(c, -1, {})
+	else:
+		pending_targets = legal
+		mode = "target"
+		_refresh()
 
 
 func _try_target(t: Dictionary) -> void:
 	for l in pending_targets:
 		if l.get("kind") == t.get("kind") and l.get("uid", -1) == t.get("uid", -1) and l.get("index", -1) == t.get("index", -1):
-			var c = pending
-			mode = _prev_mode
-			_do_cast(c, l)
+			_do_play(pending, pending_lane, l)
 			return
 	_nope("Not a legal target. (Right-click to cancel.)")
 
 
-func _do_cast(c, target: Dictionary) -> void:
-	if engine.cast(0, c, target):
+func _do_play(c, lane: int, target: Dictionary) -> void:
+	busy = true
+	_set_mode("idle")
+	await _act(func(): _last_ok = engine.play(0, c, lane, target))
+	busy = false
+	if _last_ok:
 		Sfx.play("play")
-		pending = null
-		pending_targets = []
-		_refresh()
-		if engine.is_over():
-			_game_over()
 	else:
-		_nope("Can't cast that right now.")
+		Sfx.play("nope")
+	if engine.is_over():
+		_game_over()
+	else:
+		_set_mode("play")
 
 
 func _on_player_clicked(ev: InputEvent, idx: int) -> void:
@@ -498,10 +484,26 @@ func _nope(msg: String) -> void:
 
 func _unhandled_input(ev: InputEvent) -> void:
 	if ev is InputEventKey and ev.pressed and not ev.echo:
-		if ev.keycode == KEY_ESCAPE and mode == "target":
-			_set_mode(_prev_mode)
+		if ev.keycode == KEY_ESCAPE and mode in ["place", "target", "move"]:
+			_set_mode("play")
 		elif ev.keycode == KEY_SPACE and not busy and btn_main.visible and not btn_main.disabled:
 			_on_main_button()
+
+
+## What will happen if this creature attacks now: "face", "kill", "trade", "hit", "dies".
+func _forecast(c) -> String:
+	var b := engine.blocker_for(c)
+	if b == null:
+		return "face"
+	var k := BattleAI.kills(c, b)
+	var d := BattleAI.kills(b, c)
+	if k and d:
+		return "trade"
+	if k:
+		return "kill"
+	if d:
+		return "dies"
+	return "hit"
 
 
 # ================================================================ rendering
@@ -513,24 +515,43 @@ func _refresh() -> void:
 	var op: BattleEngine.PlayerState = engine.me(1)
 	opp_life.text = str(op.life)
 	me_life.text = str(me.life)
-	opp_info.text = "Hand %d · Library %d" % [op.hand.size(), op.library.size()]
-	me_info.text = "Library %d · Discard %d" % [me.library.size(), me.graveyard.size()]
-	var target_player := func(i): return mode == "target" and pending_targets.any(func(t): return t.get("kind") == "player" and t.get("index") == i)
-	opp_panel.add_theme_stylebox_override("panel", UIKit.panel_style(UIKit.PAPER, UIKit.GOLD if target_player.call(1) else UIKit.WOOD, 4 if target_player.call(1) else 3))
-	me_panel.add_theme_stylebox_override("panel", UIKit.panel_style(UIKit.PAPER, UIKit.GOLD if target_player.call(0) else UIKit.WOOD, 4 if target_player.call(0) else 3))
+	opp_sparks.set_values(op.sparks, op.max_sparks)
+	me_sparks.set_values(me.sparks, me.max_sparks)
+	opp_info.text = "Hand %d · Deck %d" % [op.hand.size(), op.library.size()]
+	me_info.text = "Deck %d · Discard %d" % [me.library.size(), me.graveyard.size()]
+	for i in 2:
+		var targetable := mode == "target" and pending_targets.any(func(t): return t.get("kind") == "player" and t.get("index") == i)
+		var panel := opp_panel if i == 1 else me_panel
+		panel.add_theme_stylebox_override("panel", UIKit.panel_style(UIKit.PAPER, UIKit.GOLD if targetable else UIKit.WOOD, 4 if targetable else 3))
+	_style_slots()
 	_update_controls()
-	# Rebuild board views.
 	var old := views
 	views = {}
 	for c in board.get_children():
 		board.remove_child(c)
 		c.queue_free()
-	_layout_lands(op, ROW_OPP_LANDS)
-	_layout_lands(me, ROW_MY_LANDS)
-	_layout_creatures(op.battlefield, ROW_OPP, old)
-	_layout_creatures(me.battlefield, ROW_ME, old)
+	for pl in 2:
+		for c in engine.me(pl).lanes:
+			if c:
+				_layout_creature(c, old)
 	_layout_hand(me.hand, old)
-	_update_arrows()
+
+
+func _style_slots() -> void:
+	for pl in 2:
+		for l in BattleEngine.LANES:
+			var col := Color(1, 1, 1, 0.06)
+			var border := Color(1, 1, 1, 0.12)
+			if pl == 0 and mode == "place":
+				var free: bool = engine.empty_lanes(0).has(l)
+				col = Color(UIKit.LEAF, 0.35) if free else Color(UIKit.GOLD, 0.25)
+				border = UIKit.LEAF if free else UIKit.GOLD
+			elif pl == 0 and mode == "move" and engine.move_options(0, move_uid).has(l):
+				col = Color(UIKit.TEAL, 0.35)
+				border = UIKit.TEAL
+			var st := UIKit.panel_style(col, border, 2, 8)
+			st.shadow_size = 0
+			lane_slots[pl][l].add_theme_stylebox_override("panel", st)
 
 
 func _update_controls() -> void:
@@ -542,31 +563,25 @@ func _update_controls() -> void:
 	btn_main.visible = true
 	btn_main.disabled = false
 	match mode:
-		"main":
-			if engine.combat_done:
-				phase_label.text = "Main phase (after combat). Cast spells, then end your turn."
-				btn_main.text = "End turn"
-			else:
-				phase_label.text = "Main phase. Play a land, cast spells, then attack."
-				var able: Array = engine.me(0).battlefield.filter(func(c): return c.can_attack())
-				btn_main.text = "Attack..." if not able.is_empty() else "End turn"
-				btn_alt.visible = not able.is_empty()
-				btn_alt.text = "End turn"
+		"play":
+			var can_atk := not _attack_candidates().is_empty()
+			phase_label.text = "Play cards with your Sparks, then attack." if can_atk else "Play cards with your Sparks, then end your turn."
+			btn_main.text = "Attack..." if can_atk else "End turn"
+			btn_alt.visible = can_atk
+			btn_alt.text = "End turn"
 		"attack":
-			phase_label.text = "Click your creatures to choose attackers."
-			btn_main.text = "Attack (%d)" % sel_attackers.size() if not sel_attackers.is_empty() else "Skip combat"
+			phase_label.text = "Click creatures to choose who attacks. Badges show what will happen."
+			btn_main.text = "Attack! (%d)" % sel_attackers.size() if not sel_attackers.is_empty() else "Don't attack"
 			btn_alt.visible = true
 			btn_alt.text = "Cancel"
-		"blocks":
-			phase_label.text = "%s attacks! Click one of your creatures, then the attacker it should block." % npc["name"]
-			btn_main.text = "Confirm blocks" if not block_assign.is_empty() else "No blocks"
-			btn_alt.visible = not block_assign.is_empty()
-			btn_alt.text = "Clear"
-		"tricks":
-			phase_label.text = "Combat trick window. Cast an instant, or continue."
-			btn_main.text = "Continue"
+		"place":
+			phase_label.text = "Choose a lane for %s. (Playing over your own creature sends it home.)" % pending.def.name
+			btn_main.text = "Cancel"
 		"target":
-			phase_label.text = "Choose a target for %s. (Right-click to cancel)" % pending.def.name
+			phase_label.text = "Choose a target for %s." % pending.def.name
+			btn_main.text = "Cancel"
+		"move":
+			phase_label.text = "Click a highlighted lane to move there."
 			btn_main.text = "Cancel"
 		"over":
 			btn_main.visible = false
@@ -575,65 +590,40 @@ func _update_controls() -> void:
 			btn_main.visible = false
 
 
-func _layout_lands(p: BattleEngine.PlayerState, y: float) -> void:
-	var by_color := {}
-	for l in p.lands:
-		var col: String = l.def.produces
-		if not by_color.has(col):
-			by_color[col] = [0, 0]
-		by_color[col][1] += 1
-		if not l.tapped:
-			by_color[col][0] += 1
-	var x := CX + 6
-	for col in CardDef.COLORS:
-		if not by_color.has(col):
-			continue
-		var chip := Panel.new()
-		var st := UIKit.panel_style(UIKit.CARD_COLORS[col], UIKit.CARD_COLORS[col].darkened(0.4), 2, 10)
-		chip.add_theme_stylebox_override("panel", st)
-		chip.position = Vector2(x, y)
-		chip.size = Vector2(70, 28)
-		chip.mouse_filter = Control.MOUSE_FILTER_PASS
-		chip.tooltip_text = "%s: %d untapped of %d" % [CardDef.COLOR_NAMES[col], by_color[col][0], by_color[col][1]]
-		var l := UIKit.label("%d / %d" % by_color[col], 14, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER)
-		l.add_theme_color_override("font_outline_color", Color("2a211c"))
-		l.add_theme_constant_override("outline_size", 4)
-		l.size = chip.size
-		chip.add_child(l)
-		board.add_child(chip)
-		x += 76
+func _lane_pos(pl: int, lane: int) -> Vector2:
+	return Vector2(CX + lane * LANE_W + (LANE_W - CARD_W) / 2.0, ROW_OPP if pl == 1 else ROW_ME)
 
 
-func _layout_creatures(list: Array, y: float, old: Dictionary) -> void:
-	var n := list.size()
-	if n == 0:
-		return
-	var w := clampf(CW / n - 30.0, 40.0, CREATURE_W)
-	var slot := w + 30.0
-	var start := CX + CW / 2 - slot * n / 2.0 + 15.0
-	for i in n:
-		var c: BattleEngine.CardInstance = list[i]
-		var cv := CardView.make(c.def, w)
-		cv.instance_uid = c.uid
-		cv.power_override = c.power()
-		cv.toughness_override = c.toughness()
-		cv.damage = c.damage
-		cv.pivot_offset = cv.size / 2
-		cv.position = Vector2(start + i * slot, y + (110 - cv.size.y) / 2.0)
-		if c.tapped:
-			cv.rotation_degrees = 90
-		if c.sick and not c.has_kw("haste") and c.owner == engine.active and engine.active == 0:
-			cv.badge = "zzz"
-			cv.badge_color = UIKit.INK_SOFT
-		cv.highlight = _creature_highlight(c)
-		cv.clicked.connect(_on_card_clicked)
-		cv.hovered.connect(_on_hover)
-		board.add_child(cv)
-		views[c.uid] = cv
-		last_rects[c.uid] = Rect2(cv.position, cv.size)
-		if not old.has(c.uid):
-			cv.scale = Vector2(0.3, 0.3)
-			create_tween().tween_property(cv, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+func _layout_creature(c: BattleEngine.CardInstance, old: Dictionary) -> void:
+	var cv := CardView.make(c.def, CARD_W)
+	cv.instance_uid = c.uid
+	cv.power_override = c.power()
+	cv.health_override = c.max_health()
+	cv.damage = c.damage
+	cv.shielded = c.shield
+	cv.frozen = c.frozen > 0
+	cv.position = _lane_pos(c.owner, c.lane)
+	cv.pivot_offset = cv.size / 2
+	if c.owner == engine.active and c.fresh and not c.has_kw("swift"):
+		cv.badge = "zzz"
+		cv.badge_color = UIKit.INK_SOFT
+	cv.highlight = _creature_highlight(c)
+	if mode == "attack" and c.owner == 0 and engine.can_attack(c):
+		var f := _forecast(c)
+		var labels := { "face": "→ %d" % c.power(), "kill": "KO!", "trade": "trade", "hit": "hit", "dies": "dies" }
+		var cols := { "face": UIKit.GOLD.darkened(0.2), "kill": Color("2e7d32"), "trade": UIKit.TEAL, "hit": UIKit.INK_SOFT, "dies": Color("c0392b") }
+		cv.badge = labels[f]
+		cv.badge_color = cols[f]
+		if not sel_attackers.has(c.uid):
+			cv.dim = true
+	cv.clicked.connect(_on_card_clicked)
+	cv.hovered.connect(_on_hover)
+	board.add_child(cv)
+	views[c.uid] = cv
+	last_rects[c.uid] = Rect2(cv.position, cv.size)
+	if not old.has(c.uid):
+		cv.scale = Vector2(0.3, 0.3)
+		cv.create_tween().tween_property(cv, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
 func _creature_highlight(c: BattleEngine.CardInstance) -> Color:
@@ -642,19 +632,12 @@ func _creature_highlight(c: BattleEngine.CardInstance) -> Color:
 			if t.get("kind") == "creature" and t.get("uid") == c.uid:
 				return Color(UIKit.GOLD, 0.9)
 		return Color(0, 0, 0, 0)
-	if engine.attackers.has(c.uid) or sel_attackers.has(c.uid):
+	if sel_attackers.has(c.uid):
 		return Color(UIKit.ROSE, 0.95)
-	if mode == "attack" and c.owner == 0 and c.can_attack():
-		return Color(1, 1, 1, 0.35)
-	if mode == "blocks":
-		if c.uid == sel_blocker:
-			return Color(UIKit.TEAL, 0.95)
-		if block_assign.values().has(c.uid):
-			return Color(UIKit.TEAL, 0.6)
-		if c.owner == 0 and not c.tapped:
-			return Color(1, 1, 1, 0.35)
-	if engine.blocks.values().has(c.uid):
-		return Color(UIKit.TEAL, 0.8)
+	if mode == "move" and c.uid == move_uid:
+		return Color(UIKit.TEAL, 0.95)
+	if mode == "play" and c.owner == 0 and not engine.move_options(0, c.uid).is_empty():
+		return Color(UIKit.TEAL, 0.35)
 	return Color(0, 0, 0, 0)
 
 
@@ -669,45 +652,24 @@ func _layout_hand(hand: Array, old: Dictionary) -> void:
 		var c: BattleEngine.CardInstance = hand[i]
 		var cv := CardView.make(c.def, HAND_W)
 		cv.instance_uid = c.uid
-		var playable := false
-		if c.def.is_land():
-			playable = engine.can_play_land(0, c) and mode == "main"
-		else:
-			playable = engine.can_cast(0, c) and mode in ["main", "tricks"]
+		var playable := engine.can_play(0, c) and mode in ["play", "place", "move"]
 		cv.dim = not playable and mode != "target"
 		cv.highlight = Color(UIKit.LEAF, 0.8) if playable else Color(0, 0, 0, 0)
 		if pending and pending.uid == c.uid:
 			cv.highlight = Color(UIKit.GOLD, 1)
-		cv.position = Vector2(start + i * step, ROW_HAND + 10 + absf(i - (n - 1) / 2.0) * 2.0)
+		cv.position = Vector2(start + i * step, ROW_HAND + 14 + absf(i - (n - 1) / 2.0) * 2.0)
 		cv.rotation_degrees = (i - (n - 1) / 2.0) * 1.5
 		cv.clicked.connect(_on_card_clicked)
 		cv.hovered.connect(func(v, on):
 			_on_hover(v, on)
 			if is_instance_valid(v):
-				v.position.y += -24 if on else 24
+				v.position.y += -26 if on else 26
 				v.z_index = 5 if on else 0)
 		board.add_child(cv)
 		views[c.uid] = cv
 		if not old.has(c.uid):
 			cv.position.y += 120
-			create_tween().tween_property(cv, "position:y", cv.position.y - 120, 0.3).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-
-
-func _update_arrows() -> void:
-	var lines: Array = []
-	var center := func(uid):
-		var r: Rect2 = last_rects.get(uid, Rect2())
-		return r.position + r.size / 2
-	for a in engine.attackers:
-		if engine.blocks.has(a):
-			lines.append([center.call(engine.blocks[a]), center.call(a), UIKit.TEAL])
-		else:
-			var to := opp_panel.position + Vector2(160, 70) if engine.active == 0 else me_panel.position + Vector2(160, 70)
-			lines.append([center.call(a), to, UIKit.ROSE])
-	for a in block_assign:
-		lines.append([center.call(block_assign[a]), center.call(a), UIKit.TEAL])
-	arrows.lines = lines
-	arrows.queue_redraw()
+			cv.create_tween().tween_property(cv, "position:y", cv.position.y - 120, 0.3).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 
 
 func _on_hover(v: CardView, on: bool) -> void:
@@ -720,45 +682,98 @@ func _on_hover(v: CardView, on: bool) -> void:
 	var c := engine.find(v.instance_uid)
 	if c:
 		_preview.power_override = c.power()
-		_preview.toughness_override = c.toughness()
+		_preview.health_override = c.max_health()
 		_preview.damage = c.damage
+		_preview.shielded = c.shield
+		_preview.frozen = c.frozen > 0
 	preview_holder.add_child(_preview)
 
 
 # ================================================================ events & juice
 
 func _on_event(kind: String, d: Dictionary) -> void:
-	match kind:
-		"log":
-			var t: String = d["text"]
-			if t.begins_with("--"):
-				log_box.append_text("[color=#6b4a32][b]%s[/b][/color]\n" % t)
-			else:
-				log_box.append_text(t + "\n")
-		"player_damage":
-			var panel := opp_panel if d["player"] == 1 else me_panel
-			_float_text("-%d" % d["amount"], panel.position + Vector2(122, 62), Color("ff6b6b"))
-			_pulse(opp_life if d["player"] == 1 else me_life)
-			Sfx.play("hit", 1.0 + randf() * 0.2)
-		"life_gain":
-			var panel2 := opp_panel if d["player"] == 1 else me_panel
-			_float_text("+%d" % d["amount"], panel2.position + Vector2(18, 62), Color("7bd389"))
-			Sfx.play("chime", 1.3, -8.0)
-		"creature_damage":
-			var r: Rect2 = last_rects.get(d["uid"], Rect2())
-			if r.size != Vector2.ZERO:
-				_float_text("-%d" % d["amount"], r.position + Vector2(r.size.x / 2 - 8, 10), Color("ffb347"))
-		"leave":
-			var r2: Rect2 = last_rects.get(d["uid"], Rect2())
-			if r2.size != Vector2.ZERO:
-				_poof(r2)
-		"draw":
-			if d["player"] == 0:
-				Sfx.play("flip", 1.1, -8.0)
-		"pump":
-			Sfx.play("chime", 1.6, -10.0)
-		"game_over":
-			pass
+	if kind == "log":
+		var t: String = d["text"]
+		if t.begins_with("--"):
+			log_box.append_text("[color=#6b4a32][b]%s[/b][/color]\n" % t)
+		else:
+			log_box.append_text(t + "\n")
+		return
+	_queue.append([kind, d])
+
+
+func _play_queue() -> void:
+	var q := _queue.duplicate()
+	_queue.clear()
+	for item in q:
+		var kind: String = item[0]
+		var d: Dictionary = item[1]
+		match kind:
+			"clash":
+				await _lunge(d)
+			"player_damage":
+				var panel := opp_panel if d["player"] == 1 else me_panel
+				_float_text("-%d" % d["amount"], panel.position + Vector2(118, 54), Color("ff6b6b"))
+				_pulse(opp_life if d["player"] == 1 else me_life)
+				_shake_panel(panel)
+				Sfx.play("hit", 1.0 + randf() * 0.2)
+			"life_gain":
+				var panel2 := opp_panel if d["player"] == 1 else me_panel
+				_float_text("+%d" % d["amount"], panel2.position + Vector2(20, 54), Color("7bd389"))
+				Sfx.play("chime", 1.3, -8.0)
+			"creature_damage":
+				var r: Rect2 = last_rects.get(d["uid"], Rect2())
+				if r.size != Vector2.ZERO:
+					_float_text("-%d" % d["amount"], r.position + Vector2(r.size.x / 2 - 8, 20), Color("ffb347"))
+			"shield_pop":
+				var r3: Rect2 = last_rects.get(d["uid"], Rect2())
+				if r3.size != Vector2.ZERO:
+					_float_text("pop!", r3.position + Vector2(r3.size.x / 2 - 14, 30), Color("9fe4ff"))
+				Sfx.play("flip", 1.8)
+			"leave":
+				var r2: Rect2 = last_rects.get(d["uid"], Rect2())
+				if r2.size != Vector2.ZERO:
+					_poof(r2)
+				if views.has(d["uid"]) and is_instance_valid(views[d["uid"]]):
+					views[d["uid"]].visible = false
+				await _wait(0.12)
+			"enter":
+				Sfx.play("thump", 1.2, -6.0)
+				_refresh()
+				await _wait(0.15)
+			"move":
+				var v: CardView = views.get(d["uid"])
+				if v and is_instance_valid(v):
+					var owner_pl := 0 if engine.find(d["uid"]) and engine.find(d["uid"]).owner == 0 else 1
+					var tw := create_tween()
+					tw.tween_property(v, "position", _lane_pos(owner_pl, d["to"]), 0.25).set_trans(Tween.TRANS_CUBIC)
+					await tw.finished
+			"buff":
+				Sfx.play("chime", 1.6, -10.0)
+			"freeze":
+				Sfx.play("chime", 0.7, -6.0)
+			"draw":
+				if d["player"] == 0:
+					Sfx.play("flip", 1.1, -8.0)
+
+
+func _lunge(d: Dictionary) -> void:
+	var v: CardView = views.get(d["attacker"])
+	if v == null or not is_instance_valid(v):
+		return
+	var start := v.position
+	var dir := 1.0 if d["player"] == 1 else -1.0
+	var target := start + Vector2(0, dir * 70.0)
+	if d["blocker"] == -1:
+		target = start + Vector2(0, dir * 120.0)
+	v.z_index = 10
+	var tw := create_tween()
+	tw.tween_property(v, "position", target, 0.14).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tw.tween_callback(func(): Sfx.play("hit", 0.8 + randf() * 0.3, -4.0))
+	tw.tween_property(v, "position", start, 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	await tw.finished
+	if is_instance_valid(v):
+		v.z_index = 0
 
 
 func _float_text(t: String, at: Vector2, c: Color) -> void:
@@ -779,6 +794,14 @@ func _pulse(l: Label) -> void:
 	var tw := create_tween()
 	tw.tween_property(l, "scale", Vector2(1.3, 1.3), 0.08)
 	tw.tween_property(l, "scale", Vector2.ONE, 0.2)
+
+
+func _shake_panel(p: Control) -> void:
+	var base := p.position
+	var tw := create_tween()
+	for i in 4:
+		tw.tween_property(p, "position", base + Vector2(randf_range(-4, 4), randf_range(-2, 2)), 0.03)
+	tw.tween_property(p, "position", base, 0.03)
 
 
 func _poof(r: Rect2) -> void:
@@ -857,6 +880,7 @@ func _show_result(won_game: bool, match_over: bool) -> void:
 		v.add_child(UIKit.label("Match score %d-%d. Shuffle up for the next game." % score, 14, UIKit.INK, HORIZONTAL_ALIGNMENT_CENTER))
 		v.add_child(UIKit.button("Next game", func():
 			result_layer.visible = false
+			mode = "idle"
 			_new_game()))
 		return
 	var lines: Array = npc.get("win_lines" if match_won else "lose_lines", [""])
@@ -879,23 +903,36 @@ func _leave() -> void:
 	Game.goto("tournament" if context == "tournament" else Game.return_scene)
 
 
-## Draws attack / block lines over the board.
-class ArrowLayer:
+## Row of Spark orbs: lit = available this turn, dim = spent, hollow = not yet earned.
+class SparkMeter:
 	extends Control
-	var lines: Array = []
+	var cur := 0
+	var top := 0
+
+	func _ready() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func set_values(c: int, m: int) -> void:
+		cur = c
+		top = m
+		tooltip_text = "Sparks: %d / %d" % [c, m]
+		queue_redraw()
 
 	func _draw() -> void:
-		for l in lines:
-			var a: Vector2 = l[0]
-			var b: Vector2 = l[1]
-			var c: Color = l[2]
-			if a == Vector2.ZERO or b == Vector2.ZERO:
-				continue
-			draw_line(a, b, Color(0, 0, 0, 0.4), 6.0)
-			draw_line(a, b, c, 3.0)
-			var dir := (b - a).normalized()
-			var side := dir.orthogonal() * 7.0
-			draw_colored_polygon(PackedVector2Array([b, b - dir * 12.0 + side, b - dir * 12.0 - side]), c)
+		var rad := 5.5
+		var font := get_theme_default_font()
+		draw_string(font, Vector2(0, 13), "%d/%d" % [cur, top], HORIZONTAL_ALIGNMENT_LEFT, -1, 12, UIKit.INK)
+		for i in BattleEngine.MAX_SPARKS:
+			var c := Vector2(38 + i * 11.0, 9)
+			if i < cur:
+				draw_circle(c, rad, CardView.SPARK)
+				draw_circle(c + Vector2(-1.5, -1.5), 1.6, Color(1, 1, 1, 0.7))
+			elif i < top:
+				draw_circle(c, rad, Color("8a7a60"))
+			else:
+				draw_arc(c, rad - 0.5, 0, TAU, 12, Color(0, 0, 0, 0.25), 1.0)
+		if cur > BattleEngine.MAX_SPARKS:
+			draw_string(font, Vector2(38 + 10 * 11.0 - 4, 13), "+", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, UIKit.INK)
 
 
 class StarField:
